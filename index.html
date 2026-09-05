@@ -1,0 +1,2825 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cosmo Shooter - Трофеи + Ранги + Админ Арбуз</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; user-select:none; font-family:'Segoe UI',Arial,sans-serif; }
+body { background:#0b0e1a; min-height:100vh; display:flex; justify-content:center; align-items:center; background-image:radial-gradient(ellipse at 20% 50%,#1a1f33 0%,#05070c 100%); overflow:hidden; }
+#gameContainer { width:960px; height:650px; background:#10141f; border-radius:40px; box-shadow:0 20px 60px rgba(0,0,0,0.8),0 0 30px rgba(0,180,255,0.2); position:relative; overflow:hidden; border:1px solid #2b3b66; }
+.screen { position:absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; background:rgba(8,12,25,0.85); backdrop-filter:blur(2px); }
+.screen.active { display:flex; }
+
+/* АВТОРИЗАЦИЯ */
+#authScreen { background:rgba(5,8,18,0.95); gap:15px; z-index:10; }
+#authScreen h1 { color:#b3e4ff; font-size:48px; text-shadow:0 0 30px #0088ff; letter-spacing:3px; animation:glowPulse 2s ease-in-out infinite; }
+@keyframes glowPulse { 0%,100% { text-shadow:0 0 30px #0088ff; } 50% { text-shadow:0 0 60px #0088ff,0 0 90px #0044ff; } }
+.auth-input { background:#1b2338; border:1px solid #3d5580; border-radius:30px; padding:14px 25px; width:300px; color:white; font-size:16px; outline:none; transition:0.3s; }
+.auth-input:focus { border-color:#6a9eff; box-shadow:0 0 20px #0055ff66; }
+.auth-btn { background:linear-gradient(145deg,#2a6eff,#0044cc); border:none; padding:14px 50px; border-radius:40px; color:white; font-size:20px; font-weight:bold; cursor:pointer; box-shadow:0 0 30px #0044ff77; transition:0.2s; margin-top:5px; width:200px; }
+.auth-btn:hover { transform:scale(1.03); box-shadow:0 0 50px #0066ffaa; }
+.auth-btn.secondary { background:#1e2a44; box-shadow:none; }
+.auth-btn.secondary:hover { background:#2a3a5a; }
+.auth-error { color:#ff6b6b; font-size:14px; min-height:20px; text-align:center; }
+
+/* МЕНЮ */
+#menuScreen { justify-content:flex-start; padding:0; background:transparent; overflow:hidden; }
+.menu-background { position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+.menu-bg-star { position:absolute; border-radius:50%; background:white; animation:twinkle 2s ease-in-out infinite alternate; }
+@keyframes twinkle { 0% { opacity:0.2; transform:scale(0.8); } 100% { opacity:1; transform:scale(1.2); } }
+.menu-bg-planet { position:absolute; border-radius:50%; animation:floatPlanet 8s ease-in-out infinite; }
+@keyframes floatPlanet { 0%,100% { transform:translateY(0px) rotate(0deg); } 50% { transform:translateY(-30px) rotate(180deg); } }
+.menu-bg-ring { position:absolute; border:2px solid rgba(100,150,255,0.3); border-radius:50%; animation:rotateRing 20s linear infinite; }
+@keyframes rotateRing { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+.faceblox-title { position:absolute; top:8px; left:50%; transform:translateX(-50%); color:#ff6b9d; font-size:28px; font-weight:900; text-shadow:0 0 40px #ff0066,0 0 80px #ff006644,0 0 120px #ff006622; letter-spacing:4px; z-index:15; animation:facebloxGlow 2s ease-in-out infinite; font-family:'Arial Black',sans-serif; white-space:nowrap; }
+@keyframes facebloxGlow { 0%,100% { text-shadow:0 0 40px #ff0066,0 0 80px #ff006644; } 50% { text-shadow:0 0 60px #ff0066,0 0 100px #ff006688,0 0 150px #ff006644; } }
+.discord-link { position:absolute; top:10px; right:20px; z-index:15; color:#7289da; font-size:12px; text-decoration:none; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:30px; border:1px solid #7289da; transition:0.3s; display:flex; align-items:center; gap:4px; }
+.discord-link:hover { background:#7289da22; transform:scale(1.05); box-shadow:0 0 30px #7289da44; }
+.menu-profile { position:absolute; top:50px; left:15px; display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); padding:6px 14px 6px 10px; border-radius:60px; border:1px solid #3a5580; color:white; z-index:20; cursor:pointer; transition:0.3s; animation:slideInLeft 0.8s ease-out; }
+.menu-profile:hover { background:rgba(20,30,60,0.7); border-color:#6a9eff; }
+@keyframes slideInLeft { 0% { transform:translateX(-100px); opacity:0; } 100% { transform:translateX(0); opacity:1; } }
+.menu-profile .avatar { width:32px; height:32px; border-radius:50%; background:#2a4f8a; display:flex; align-items:center; justify-content:center; font-size:15px; border:2px solid #6fa3ff; }
+.menu-profile .info { line-height:1.2; }
+.menu-profile .info .name { font-weight:bold; color:#c6e2ff; font-size:12px; }
+.menu-profile .info .coins { color:#f7d44a; font-size:10px; }
+.menu-profile .info .trophies { color:#ffd700; font-size:10px; }
+.menu-profile .info .rank { font-size:10px; font-weight:bold; }
+.menu-center { display:flex; flex-direction:column; gap:6px; align-items:center; margin-top:50px; z-index:10; animation:fadeInUp 1s ease-out; }
+@keyframes fadeInUp { 0% { transform:translateY(50px); opacity:0; } 100% { transform:translateY(0); opacity:1; } }
+.menu-title { color:#d6edff; font-size:20px; text-shadow:0 0 40px #0088ff; letter-spacing:3px; margin-bottom:2px; }
+.menu-btn { background:linear-gradient(145deg,#1f3b6a,#0f1e3f); border:1px solid #4b71b0; border-radius:60px; padding:6px 22px; font-size:13px; font-weight:bold; color:#e0f0ff; cursor:pointer; width:170px; text-align:center; transition:0.25s; box-shadow:0 3px 0 #0a1428; position:relative; overflow:hidden; }
+.menu-btn::after { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background:linear-gradient(45deg,transparent,rgba(255,255,255,0.05),transparent); transform:rotate(45deg) translateX(-100%); transition:0.6s; }
+.menu-btn:hover::after { transform:rotate(45deg) translateX(100%); }
+.menu-btn:hover { transform:translateY(-2px); box-shadow:0 5px 0 #0a1428,0 0 30px #2a6eff77; background:linear-gradient(145deg,#2a4f8a,#142b55); }
+.menu-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #0a1428; }
+.menu-btn.secondary { background:#1e2a44; border-color:#5e6f92; }
+.menu-btn.quest { background:linear-gradient(145deg,#3a2a1a,#1a1a0a); border-color:#8a7a4a; box-shadow:0 3px 0 #1a1a0a; font-size:12px; padding:5px 18px; width:170px; }
+.menu-btn.quest:hover { background:linear-gradient(145deg,#4a3a2a,#2a2a1a); box-shadow:0 5px 0 #1a1a0a,0 0 30px #ffaa4477; }
+.menu-btn.pvp { background:linear-gradient(145deg,#4a2a6a,#2a1a3f); border-color:#8a4ab0; box-shadow:0 3px 0 #1a0a2a; font-size:12px; padding:5px 18px; width:170px; }
+.menu-btn.pvp:hover { background:linear-gradient(145deg,#5a3a8a,#3a2a5a); box-shadow:0 5px 0 #1a0a2a,0 0 30px #aa44ff77; }
+.menu-btn.inventory { background:linear-gradient(145deg,#3a2a4a,#1a1a2a); border-color:#8a6aaa; box-shadow:0 3px 0 #1a0a2a; font-size:12px; padding:5px 18px; width:170px; }
+.menu-btn.inventory:hover { background:linear-gradient(145deg,#4a3a5a,#2a2a3a); box-shadow:0 5px 0 #1a0a2a,0 0 30px #aa66ff77; }
+.menu-btn.shop { background:linear-gradient(145deg,#2a5a2a,#1a3a1a); border-color:#4a8a4a; font-size:12px; padding:5px 18px; width:170px; }
+.menu-btn.shop:hover { background:linear-gradient(145deg,#3a6a3a,#2a4a2a); box-shadow:0 5px 0 #0a2a0a,0 0 30px #44ff4477; }
+.menu-btn.trophy-shop { background:linear-gradient(145deg,#4a3a1a,#2a1a0a); border-color:#ffd700; box-shadow:0 3px 0 #1a1a0a; font-size:12px; padding:5px 18px; width:170px; }
+.menu-btn.trophy-shop:hover { background:linear-gradient(145deg,#5a4a2a,#3a2a1a); box-shadow:0 5px 0 #1a1a0a,0 0 30px #ffd70044; }
+.menu-btn.leaderboard { background:linear-gradient(145deg,#2a2a4a,#1a1a2a); border-color:#4a4a8a; font-size:12px; padding:5px 18px; width:170px; }
+.menu-btn.leaderboard:hover { background:linear-gradient(145deg,#3a3a5a,#2a2a3a); box-shadow:0 5px 0 #0a0a2a,0 0 30px #6666ff77; }
+.menu-btn.admin { background:linear-gradient(145deg,#6a1f3b,#3f0f1e); border-color:#b04b71; box-shadow:0 3px 0 #2a0a14; font-size:12px; padding:5px 18px; width:170px; }
+.menu-btn.admin:hover { background:linear-gradient(145deg,#8a2a4f,#5a142b); box-shadow:0 5px 0 #2a0a14,0 0 30px #ff2a6e77; }
+
+/* МАГАЗИН ТРОФЕЕВ */
+#trophyShopScreen { background:rgba(5,8,18,0.95); backdrop-filter:blur(8px); gap:12px; }
+#trophyShopScreen h2 { color:#ffd700; font-size:28px; text-shadow:0 0 30px #ff8800; }
+.trophy-shop-grid { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:500px; }
+.trophy-item { background:#18233d; border:2px solid #3d5680; border-radius:20px; padding:12px 16px; text-align:center; color:white; transition:0.3s; min-width:140px; flex:1; max-width:160px; }
+.trophy-item:hover { transform:scale(1.05); border-color:#ffd700; box-shadow:0 0 30px #ffd70044; }
+.trophy-item .ticon { font-size:32px; display:block; }
+.trophy-item .tname { font-size:13px; font-weight:bold; color:#c6e2ff; margin:2px 0; }
+.trophy-item .tprice { color:#ffd700; font-size:12px; }
+.trophy-item .tdesc { color:#aac9ff; font-size:10px; }
+.trophy-btn { background:#2a6eff; border:none; padding:5px 18px; border-radius:30px; color:white; font-weight:bold; margin-top:4px; cursor:pointer; font-size:12px; transition:0.3s; }
+.trophy-btn:hover { background:#4a8aff; transform:scale(1.05); }
+.trophy-btn:disabled { background:#3a3a5a; cursor:not-allowed; color:#888; }
+.close-trophy-shop { position:absolute; top:16px; right:20px; background:#3f3f6a; border:none; color:white; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; }
+
+/* РАНГИ В ПРОФИЛЕ */
+.rank-display { display:flex; align-items:center; gap:6px; margin-top:2px; }
+.rank-badge { font-size:14px; }
+.rank-name { font-size:11px; font-weight:bold; }
+.rank-color-common { color:#88ff88; }
+.rank-color-rare { color:#4488ff; }
+.rank-color-epic { color:#aa44ff; }
+.rank-color-legendary { color:#ff8800; }
+.rank-color-mythic { color:#ff2244; }
+.rank-color-god { color:#ffd700; text-shadow:0 0 20px #ffd700; }
+
+/* АДМИН АРБУЗ */
+#adminArbuzScreen { background:rgba(5,8,18,0.95); backdrop-filter:blur(8px); gap:12px; }
+#adminArbuzScreen h2 { color:#44ff88; font-size:28px; text-shadow:0 0 30px #44ff88; display:flex; align-items:center; gap:10px; }
+#adminArbuzScreen h2 .arbuz { font-size:36px; }
+.admin-arbuz-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; max-width:400px; }
+.admin-arbuz-btn { background:#2a1a1a; border:1px solid #6a3a3a; border-radius:14px; padding:8px 12px; color:#ffb3b3; font-size:12px; font-weight:bold; cursor:pointer; transition:0.2s; }
+.admin-arbuz-btn:hover { background:#3a2a2a; border-color:#ff6b6b; box-shadow:0 0 30px #ff444444; }
+.admin-arbuz-btn.active { border-color:#44ff88; color:#44ff88; background:#1a2a1a; }
+.admin-arbuz-btn .icon { font-size:18px; display:block; margin-bottom:2px; }
+.close-admin-arbuz { position:absolute; top:16px; right:20px; background:#3f1a1a; border:none; color:#ffb3b3; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; }
+.close-admin-arbuz:hover { background:#5a2a2a; }
+
+/* ОСТАЛЬНЫЕ ЭКРАНЫ */
+#questScreen { background:rgba(5,8,18,0.95); backdrop-filter:blur(8px); gap:12px; }
+#questScreen h2 { color:#ffd700; font-size:28px; text-shadow:0 0 30px #ff8800; }
+.quest-list { display:flex; flex-direction:column; gap:10px; max-width:500px; width:100%; max-height:320px; overflow-y:auto; padding-right:5px; }
+.quest-list::-webkit-scrollbar { width:4px; }
+.quest-list::-webkit-scrollbar-track { background:#1a1a2a; }
+.quest-list::-webkit-scrollbar-thumb { background:#4a6a8a; border-radius:10px; }
+.quest-item { background:#18233d; border:2px solid #3a4a6a; border-radius:16px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; transition:0.3s; }
+.quest-item:hover { border-color:#6a8aaa; }
+.quest-item.completed { border-color:#44ff88; background:#1a2a1a; }
+.quest-item .qinfo { display:flex; flex-direction:column; gap:1px; flex:1; }
+.quest-item .qinfo .qname { color:#c6e2ff; font-size:13px; font-weight:bold; }
+.quest-item .qinfo .qdesc { color:#aac9ff; font-size:11px; }
+.quest-item .qinfo .qprogress { color:#7f8fa0; font-size:10px; }
+.quest-item .qreward { display:flex; align-items:center; gap:8px; }
+.quest-item .qreward .qcoins { color:#ffd700; font-size:14px; font-weight:bold; }
+.quest-item .qreward .qstatus { font-size:11px; }
+.quest-item .qreward .qstatus.done { color:#44ff88; }
+.quest-item .qreward .qstatus.pending { color:#ff8844; }
+.quest-item .qreward .qbtn { background:#2a6eff; border:none; padding:3px 12px; border-radius:30px; color:white; font-weight:bold; cursor:pointer; font-size:11px; transition:0.2s; }
+.quest-item .qreward .qbtn:hover { background:#4a8aff; }
+.quest-item .qreward .qbtn:disabled { background:#3a3a5a; cursor:not-allowed; color:#888; }
+.quest-item .qreward .qbtn.completed-btn { background:#44ff88; color:#0a1a0a; }
+.quest-item .qreward .qbtn.completed-btn:hover { background:#66ffaa; }
+.q-difficulty { font-size:9px; padding:1px 6px; border-radius:20px; display:inline-block; margin-top:1px; width:fit-content; }
+.q-difficulty.easy { background:#4a8a4a; color:#88ff88; }
+.q-difficulty.medium { background:#8a8a4a; color:#ffff88; }
+.q-difficulty.hard { background:#8a4a4a; color:#ff8888; }
+.q-difficulty.veryhard { background:#6a2a2a; color:#ff4444; }
+.close-quest { position:absolute; top:16px; right:20px; background:#3f3f6a; border:none; color:white; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; }
+
+#shopScreen { background:rgba(5,8,18,0.95); backdrop-filter:blur(8px); gap:12px; }
+#shopScreen h2 { color:#ffd700; font-size:28px; text-shadow:0 0 30px #ff8800; }
+.shop-grid { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:500px; }
+.shop-item { background:#18233d; border:2px solid #3d5680; border-radius:20px; padding:12px 16px; text-align:center; color:white; transition:0.3s; min-width:130px; flex:1; max-width:150px; }
+.shop-item:hover { transform:scale(1.05); border-color:#ffd700; box-shadow:0 0 30px #ffd70044; }
+.shop-item .sicon { font-size:32px; display:block; }
+.shop-item .sname { font-size:13px; font-weight:bold; color:#c6e2ff; margin:2px 0; }
+.shop-item .sprice { color:#f7d44a; font-size:12px; }
+.shop-item .sdesc { color:#aac9ff; font-size:10px; }
+.shop-btn { background:#2a6eff; border:none; padding:5px 18px; border-radius:30px; color:white; font-weight:bold; margin-top:4px; cursor:pointer; font-size:12px; transition:0.3s; }
+.shop-btn:hover { background:#4a8aff; transform:scale(1.05); }
+.shop-btn:disabled { background:#3a3a5a; cursor:not-allowed; color:#888; }
+.shop-btn.active { background:#44ff88; color:#0a1a0a; }
+.close-shop { position:absolute; top:16px; right:20px; background:#3f3f6a; border:none; color:white; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; }
+.shop-buffs { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; margin-top:3px; }
+.shop-buff { background:#2a2a3a; border:1px solid #4a4a6a; border-radius:10px; padding:1px 8px; font-size:9px; color:#aac9ff; }
+.shop-buff.active { border-color:#44ff88; color:#44ff88; }
+
+#inventoryScreen { background:rgba(5,8,18,0.95); backdrop-filter:blur(8px); gap:12px; }
+#inventoryScreen h2 { color:#b3e4ff; font-size:26px; text-shadow:0 0 30px #0088ff; }
+.inv-stats { display:flex; gap:20px; color:#aac9ff; font-size:12px; }
+.inv-stats span { color:#ffd700; }
+.inv-grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:450px; max-height:250px; overflow-y:auto; }
+.inv-grid::-webkit-scrollbar { width:4px; }
+.inv-grid::-webkit-scrollbar-track { background:#1a1a2a; }
+.inv-grid::-webkit-scrollbar-thumb { background:#4a6a8a; border-radius:10px; }
+.inv-item { background:#18233d; border:2px solid #3d5680; border-radius:16px; padding:8px 10px; width:80px; text-align:center; color:white; transition:0.3s; cursor:pointer; }
+.inv-item:hover { transform:scale(1.05); border-color:#ffd700; }
+.inv-item .preview { font-size:24px; display:block; }
+.inv-item .iname { font-size:9px; color:#aac9ff; }
+.inv-item .icount { font-size:12px; color:#ffd700; font-weight:bold; }
+.close-inv { position:absolute; top:16px; right:20px; background:#3f3f6a; border:none; color:white; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; }
+
+#skinScreen { background:rgba(5,8,18,0.95); backdrop-filter:blur(8px); gap:12px; }
+#skinScreen h2 { color:#b3e4ff; font-size:26px; text-shadow:0 0 30px #0088ff; }
+.skin-grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:480px; max-height:260px; overflow-y:auto; }
+.skin-grid::-webkit-scrollbar { width:4px; }
+.skin-grid::-webkit-scrollbar-track { background:#1a1a2a; }
+.skin-grid::-webkit-scrollbar-thumb { background:#4a6a8a; border-radius:10px; }
+.skin-item { background:#18233d; border:2px solid #3d5680; border-radius:16px; padding:6px 8px; width:90px; text-align:center; color:white; transition:0.3s; cursor:pointer; }
+.skin-item:hover { transform:scale(1.05); border-color:#8db3ff; }
+.skin-item .preview { font-size:24px; display:block; }
+.skin-item .sname { font-size:11px; font-weight:bold; color:#c6e2ff; }
+.skin-item .price { color:#f7d44a; font-size:10px; }
+.skin-item .status { font-size:9px; color:#aac9ff; }
+.skin-item .skin-effect { font-size:8px; color:#ffdd44; }
+.skin-item .skin-howto { font-size:7px; color:#88aacc; }
+.skin-item.locked { opacity:0.5; filter:grayscale(0.5); }
+.skin-item.sun-skin { border-color:#ffdd00; box-shadow:0 0 30px #ffdd0044; animation:sunGlow 2s ease-in-out infinite; }
+@keyframes sunGlow { 0%,100% { box-shadow:0 0 30px #ffdd0044; } 50% { box-shadow:0 0 60px #ffdd0088,0 0 90px #ffdd0044; } }
+.buy-btn { background:#2a6eff; border:none; padding:3px 10px; border-radius:30px; color:white; font-weight:bold; margin-top:3px; cursor:pointer; font-size:10px; }
+.buy-btn:disabled { background:#3a3a5a; cursor:not-allowed; color:#888; }
+.close-skin { position:absolute; top:16px; right:20px; background:#3f3f6a; border:none; color:white; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; }
+
+#leaderboardScreen { background:rgba(5,8,18,0.95); backdrop-filter:blur(8px); gap:12px; }
+#leaderboardScreen h2 { color:#ffd700; font-size:28px; text-shadow:0 0 30px #ff8800; }
+.lb-list { width:300px; max-height:280px; overflow-y:auto; background:rgba(0,0,0,0.3); border-radius:16px; padding:8px 12px; border:1px solid #3a5580; }
+.lb-list::-webkit-scrollbar { width:6px; }
+.lb-list::-webkit-scrollbar-track { background:#1a1a2a; border-radius:10px; }
+.lb-list::-webkit-scrollbar-thumb { background:#4a6a8a; border-radius:10px; }
+.lb-item { display:flex; justify-content:space-between; padding:4px 8px; border-bottom:1px solid #2a3a5a; color:#c6e2ff; font-size:12px; }
+.lb-item .lb-rank { color:#ffd700; font-weight:bold; width:22px; }
+.lb-item .lb-name { flex:1; margin-left:6px; }
+.lb-item .lb-coins { color:#f7d44a; }
+.lb-item .lb-trophies { color:#ffd700; }
+.lb-item:last-child { border-bottom:none; }
+.lb-item.top1 { color:#ffd700; }
+.lb-item.top2 { color:#c0c0c0; }
+.lb-item.top3 { color:#cd7f32; }
+.close-lb { position:absolute; top:16px; right:20px; background:#3f3f6a; border:none; color:white; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; }
+
+#adminScreen { background:rgba(10,5,15,0.92); backdrop-filter:blur(8px); gap:12px; }
+#adminScreen h2 { color:#ff6b9d; font-size:28px; text-shadow:0 0 30px #ff0066; }
+.admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; max-width:380px; }
+.admin-btn { background:#2a1a2a; border:1px solid #6a3a5a; border-radius:14px; padding:6px 10px; color:#ffb3d1; font-size:11px; font-weight:bold; cursor:pointer; transition:0.2s; }
+.admin-btn:hover { background:#3a2a3a; border-color:#ff6b9d; box-shadow:0 0 30px #ff006644; }
+.admin-btn.danger { border-color:#8a2a2a; color:#ff6b6b; }
+.admin-btn.danger:hover { background:#3a1a1a; border-color:#ff3333; }
+.admin-btn.arbuz { border-color:#44ff88; color:#44ff88; background:#1a2a1a; }
+.admin-btn.arbuz:hover { background:#2a3a2a; box-shadow:0 0 30px #44ff8844; }
+.admin-input { background:#1a1220; border:1px solid #4a2a5a; border-radius:14px; padding:5px 10px; color:white; font-size:12px; width:80px; text-align:center; outline:none; }
+.admin-input:focus { border-color:#ff6b9d; }
+.admin-row { display:flex; gap:8px; align-items:center; justify-content:center; }
+.close-admin { position:absolute; top:16px; right:20px; background:#3f1a2a; border:none; color:#ffb3d1; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; }
+
+#profilePopup { position:absolute; top:90px; left:15px; background:rgba(10,14,30,0.95); backdrop-filter:blur(10px); border:1px solid #3a5580; border-radius:16px; padding:12px 16px; color:white; z-index:30; display:none; min-width:150px; box-shadow:0 10px 40px rgba(0,0,0,0.8); }
+#profilePopup.show { display:block; animation:fadeIn 0.3s ease-out; }
+@keyframes fadeIn { 0% { opacity:0; transform:scale(0.95); } 100% { opacity:1; transform:scale(1); } }
+#profilePopup .popup-title { font-size:13px; font-weight:bold; color:#c6e2ff; margin-bottom:3px; }
+#profilePopup .popup-info { font-size:11px; color:#aac9ff; margin-bottom:2px; }
+#profilePopup .popup-rank { font-size:12px; font-weight:bold; margin-top:3px; }
+#profilePopup .popup-btn { background:#2a4f8a; border:none; color:white; padding:4px 10px; border-radius:30px; cursor:pointer; margin-top:3px; font-weight:bold; transition:0.2s; width:100%; font-size:11px; }
+#profilePopup .popup-btn:hover { background:#3a6faa; }
+#profilePopup .popup-btn.danger { background:#6a2a2a; }
+#profilePopup .popup-btn.danger:hover { background:#8a3a3a; }
+
+#mapScreen { background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); }
+.map-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.map-card { background:#131d33; border:2px solid #2f4a75; border-radius:16px; padding:10px 14px; width:130px; text-align:center; color:white; cursor:pointer; transition:0.2s; box-shadow:0 0 10px #00000077; }
+.map-card:hover { transform:scale(1.05); border-color:#7aaaff; background:#1e2f52; box-shadow:0 0 30px #2266ff44; }
+.back-btn { position:absolute; top:16px; right:20px; background:#2f3d66; border:none; color:white; padding:6px 16px; border-radius:40px; cursor:pointer; font-weight:bold; font-size:12px; z-index:10; }
+
+#pvpScreen { background:rgba(5,8,18,0.95); backdrop-filter:blur(8px); gap:12px; }
+#pvpScreen h2 { color:#b3e4ff; font-size:26px; text-shadow:0 0 30px #0088ff; }
+.pvp-teams { display:flex; gap:16px; margin:4px 0; }
+.pvp-team { text-align:center; padding:6px 14px; border-radius:12px; border:2px solid; min-width:70px; }
+.pvp-team.blue { border-color:#4488ff; background:rgba(68,136,255,0.1); }
+.pvp-team.green { border-color:#44ff88; background:rgba(68,255,136,0.1); }
+.pvp-team .team-label { font-size:13px; font-weight:bold; }
+.pvp-team .team-label.blue { color:#4488ff; }
+.pvp-team .team-label.green { color:#44ff88; }
+.pvp-team .team-count { font-size:10px; color:#aac9ff; }
+.pvp-btn { background:linear-gradient(145deg,#4a2a6a,#2a1a3f); border:2px solid #8a4ab0; border-radius:60px; padding:8px 30px; font-size:15px; font-weight:bold; color:#e0f0ff; cursor:pointer; transition:0.25s; box-shadow:0 3px 0 #1a0a2a; }
+.pvp-btn:hover { transform:translateY(-2px); box-shadow:0 5px 0 #1a0a2a,0 0 30px #aa44ff77; background:linear-gradient(145deg,#5a3a8a,#3a2a5a); }
+.pvp-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #1a0a2a; }
+.pvp-info { color:#7f9bc0; font-size:11px; }
+.pvp-waves-info { color:#aac9ff; font-size:12px; background:rgba(0,0,0,0.3); padding:4px 12px; border-radius:30px; border:1px solid #3a5580; }
+.pvp-waves-info span { color:#ffd700; }
+
+#gameScreen { padding:0; background:#0a0e1a; overflow:hidden; }
+#gameWrapper { width:100%; height:100%; overflow:auto; position:relative; }
+#gameWrapper::-webkit-scrollbar { width:6px; height:6px; }
+#gameWrapper::-webkit-scrollbar-track { background:#1a1a2a; }
+#gameWrapper::-webkit-scrollbar-thumb { background:#4a6a8a; border-radius:10px; }
+#gameCanvas { display:block; background:#0d111f; cursor:crosshair; }
+.game-hud { position:absolute; top:6px; left:6px; color:white; background:#00000077; padding:3px 8px; border-radius:30px; backdrop-filter:blur(4px); border:1px solid #3f5f8a; font-size:10px; display:flex; gap:6px; pointer-events:none; z-index:10; flex-wrap:wrap; }
+.game-hud span { color:#ffd966; }
+.game-hud .hud-team { font-weight:bold; }
+.game-hud .hud-team.blue { color:#4488ff; }
+.game-hud .hud-team.green { color:#44ff88; }
+.game-hud .hud-buff { color:#44ff88; font-size:9px; }
+.wave-announce { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#ffd700; font-size:36px; font-weight:bold; text-shadow:0 0 40px #ff8800,0 0 80px #ff4400; pointer-events:none; z-index:10; opacity:0; transition:opacity 0.5s; }
+.wave-announce.show { opacity:1; }
+.victory-msg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a2a0acc; backdrop-filter:blur(8px); padding:16px 32px; border-radius:60px; border:2px solid #66ff88; color:#a3ffb5; font-size:28px; font-weight:bold; text-shadow:0 0 40px #00ff55; box-shadow:0 0 60px #00ff5544; pointer-events:none; display:none; z-index:10; }
+.defeat-msg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#2a0a0acc; backdrop-filter:blur(8px); padding:16px 32px; border-radius:60px; border:2px solid #ff4444; color:#ff8888; font-size:28px; font-weight:bold; text-shadow:0 0 40px #ff0000; box-shadow:0 0 60px #ff000044; pointer-events:none; display:none; z-index:10; }
+#backFromGame { position:absolute; bottom:6px; left:6px; background:#2f3d66; border:none; padding:4px 12px; border-radius:30px; color:white; font-weight:bold; cursor:pointer; z-index:10; font-size:11px; }
+#gameAdminToggle { background:#6a1f3b; border:1px solid #b04b71; color:white; padding:1px 8px; border-radius:20px; cursor:pointer; font-size:10px; pointer-events:all; }
+#gameAdminToggle:hover { background:#8a2a4f; }
+#gameAdminPanel { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,5,20,0.95); backdrop-filter:blur(12px); border:2px solid #ff6b9d; border-radius:24px; padding:16px 20px; color:white; z-index:50; display:none; min-width:260px; box-shadow:0 0 60px #ff006644; }
+#gameAdminPanel.show { display:block; animation:fadeIn 0.3s ease-out; }
+#gameAdminPanel h3 { color:#ff6b9d; font-size:18px; text-align:center; margin-bottom:10px; }
+#gameAdminPanel .admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+#gameAdminPanel .admin-btn { background:#2a1a2a; border:1px solid #6a3a5a; border-radius:12px; padding:6px 8px; color:#ffb3d1; font-size:11px; font-weight:bold; cursor:pointer; transition:0.2s; }
+#gameAdminPanel .admin-btn:hover { background:#3a2a3a; border-color:#ff6b9d; box-shadow:0 0 20px #ff006644; }
+#gameAdminPanel .admin-btn.danger { border-color:#8a2a2a; color:#ff6b6b; }
+#gameAdminPanel .admin-btn.danger:hover { background:#3a1a1a; border-color:#ff3333; }
+#gameAdminPanel .close-admin-game { position:absolute; top:6px; right:10px; background:none; border:none; color:#ff6b9d; font-size:18px; cursor:pointer; }
+#gameAdminPanel .close-admin-game:hover { color:#ff0066; }
+#gameAdminPanel .admin-row { display:flex; gap:6px; align-items:center; justify-content:center; margin-top:6px; }
+#gameAdminPanel .admin-input { background:#1a1220; border:1px solid #4a2a5a; border-radius:12px; padding:4px 10px; color:white; font-size:12px; width:70px; text-align:center; outline:none; }
+#gameAdminPanel .admin-input:focus { border-color:#ff6b9d; }
+
+#congratsOverlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); z-index:100; display:none; align-items:center; justify-content:center; animation:fadeIn 0.5s ease-out; }
+#congratsOverlay.show { display:flex; }
+.congrats-box { background:linear-gradient(145deg,#1a2a3a,#0a1a2a); border:2px solid #ffd700; border-radius:24px; padding:24px 32px; text-align:center; color:white; max-width:340px; box-shadow:0 0 60px #ffd70044; animation:scaleIn 0.5s ease-out; }
+@keyframes scaleIn { 0% { transform:scale(0.8); opacity:0; } 100% { transform:scale(1); opacity:1; } }
+.congrats-box .cicon { font-size:48px; display:block; margin-bottom:6px; }
+.congrats-box .ctitle { font-size:22px; font-weight:bold; color:#ffd700; text-shadow:0 0 30px #ff8800; }
+.congrats-box .cdesc { font-size:13px; color:#aac9ff; margin:6px 0 12px 0; }
+.congrats-box .cbtn { background:#2a6eff; border:none; padding:6px 28px; border-radius:30px; color:white; font-weight:bold; font-size:14px; cursor:pointer; transition:0.3s; }
+.congrats-box .cbtn:hover { background:#4a8aff; transform:scale(1.05); }
+</style>
+</head>
+<body>
+<div id="gameContainer">
+
+<div id="authScreen" class="screen active">
+<h1>🚀 COSMO SHOT</h1>
+<div id="authForm">
+<input class="auth-input" id="authLogin" placeholder="Имя профиля" maxlength="20">
+<input class="auth-input" id="authPassword" placeholder="Пароль" type="password">
+<div class="auth-error" id="authError"></div>
+<button class="auth-btn" id="authLoginBtn">ВОЙТИ</button>
+<button class="auth-btn secondary" id="authRegisterBtn">ЗАРЕГИСТРИРОВАТЬСЯ</button>
+<div style="color:#7f9bc0; margin-top:6px; font-size:11px;">⚡ Трофеи | Ранги | Бусты</div>
+<div style="color:#4a6a8a; font-size:10px; margin-top:3px;">ADMIN пароль: admin123</div>
+</div>
+</div>
+
+<div id="menuScreen" class="screen">
+<div class="menu-background" id="menuBackground"></div>
+<div class="faceblox-title">✦ ПОПРОБУЙТЕ FACEBLOX ✦</div>
+<a href="https://discord.gg/pGf6m7aRD" target="_blank" class="discord-link">💬 DISCORD</a>
+<div class="menu-profile" id="profileBtn">
+<div class="avatar" id="avatarIcon">🧑‍🚀</div>
+<div class="info">
+<div class="name" id="profileName">Космонавт</div>
+<div class="coins" id="profileCoins">🪙 0</div>
+<div class="trophies" id="profileTrophies">🏆 0</div>
+<div class="rank" id="profileRank"></div>
+</div>
+</div>
+<div id="profilePopup">
+<div class="popup-title" id="popupName">Игрок</div>
+<div class="popup-info" id="popupEmail">email@mail.com</div>
+<div class="popup-info" id="popupCoins">🪙 0 монет</div>
+<div class="popup-info" id="popupTrophies">🏆 0 трофеев</div>
+<div class="popup-rank" id="popupRank"></div>
+<button class="popup-btn danger" id="logoutBtn">🚪 ВЫЙТИ</button>
+</div>
+<div class="menu-center">
+<div class="menu-title">ГАЛАКТИКА</div>
+<button class="menu-btn" id="playBtn">⚔️ ВОЛНЫ (5 волн)</button>
+<button class="menu-btn pvp" id="pvpBtn">🔵 5 НА 5 (7 волн)</button>
+<button class="menu-btn quest" id="questBtn">📋 КВЕСТЫ</button>
+<button class="menu-btn trophy-shop" id="trophyShopBtn">🏆 ТРОФЕИ</button>
+<button class="menu-btn secondary" id="skinBtn">🎨 СКИНЫ</button>
+<button class="menu-btn shop" id="shopBtn">🛒 МАГАЗИН</button>
+<button class="menu-btn inventory" id="inventoryBtn">📦 ИНВЕНТАРЬ</button>
+<button class="menu-btn leaderboard" id="leaderboardBtn">🏆 ЛИДЕРБОРД</button>
+<button class="menu-btn admin" id="adminBtn" style="display:none;">👑 АДМИН</button>
+</div>
+<div style="position:absolute; bottom:8px; right:16px; color:#4a6a8a; font-size:9px; z-index:5;">🎵 Музыка играет</div>
+</div>
+
+<!-- МАГАЗИН ТРОФЕЕВ -->
+<div id="trophyShopScreen" class="screen">
+<button class="close-trophy-shop" id="closeTrophyShop">✕ ЗАКРЫТЬ</button>
+<h2>🏆 МАГАЗИН ТРОФЕЕВ</h2>
+<div style="color:#aac9ff; font-size:12px; margin-bottom:6px;">У вас: <span style="color:#ffd700; font-weight:bold;" id="trophyShopBalance">0</span> 🏆</div>
+<div class="trophy-shop-grid">
+<div class="trophy-item">
+<span class="ticon">💰</span>
+<div class="tname">10 000 МОНЕТ</div>
+<div class="tprice">🏆 1 000 трофеев</div>
+<div class="tdesc">Обменяй трофеи на монеты</div>
+<button class="trophy-btn" id="buyCoinsForTrophies">ОБМЕНЯТЬ</button>
+</div>
+<div class="trophy-item">
+<span class="ticon">⭐</span>
+<div class="tname">ЛЕГЕНДАРНЫЙ СКИН</div>
+<div class="tprice">🏆 10 000 трофеев</div>
+<div class="tdesc">Эксклюзивный золотой скин</div>
+<button class="trophy-btn" id="buyLegendarySkin">КУПИТЬ</button>
+</div>
+</div>
+<div style="color:#7f8fa0; font-size:10px; margin-top:6px;">💡 Копите трофеи и получайте награды!</div>
+</div>
+
+<!-- АДМИН АРБУЗ -->
+<div id="adminArbuzScreen" class="screen">
+<button class="close-admin-arbuz" id="closeAdminArbuz">✕ ЗАКРЫТЬ</button>
+<h2><span class="arbuz">🍉</span> АДМИН АРБУЗ</h2>
+<div style="color:#aac9ff; font-size:12px; margin-bottom:6px;">Глобальные настройки для всех игроков</div>
+<div class="admin-arbuz-grid">
+<button class="admin-arbuz-btn" id="arbuzMusicToggle"><span class="icon">🎵</span>Музыка в меню</button>
+<button class="admin-arbuz-btn" id="arbuzThemeToggle"><span class="icon">🎨</span>Тема: Космос</button>
+<button class="admin-arbuz-btn" id="arbuzParticlesToggle"><span class="icon">✨</span>Частицы</button>
+<button class="admin-arbuz-btn" id="arbuzResetAll"><span class="icon">🔄</span>Сброс настроек</button>
+</div>
+<div style="color:#7f8fa0; font-size:10px; margin-top:6px;">🍉 Изменения применяются для всех активных игроков</div>
+</div>
+
+<!-- ОСТАЛЬНЫЕ ЭКРАНЫ -->
+<div id="questScreen" class="screen">
+<button class="close-quest" id="closeQuest">✕ ЗАКРЫТЬ</button>
+<h2>📋 КВЕСТЫ ДНЯ</h2>
+<div style="color:#aac9ff; font-size:12px; margin-bottom:6px;">Выполняй сложные задания и получай монеты!</div>
+<div class="quest-list" id="questList"></div>
+<div style="color:#7f8fa0; font-size:10px; margin-top:6px;">🔄 Квесты обновляются каждый день</div>
+</div>
+
+<div id="shopScreen" class="screen">
+<button class="close-shop" id="closeShop">✕ ЗАКРЫТЬ</button>
+<h2>🛒 МАГАЗИН</h2>
+<div style="color:#aac9ff; font-size:12px; margin-bottom:6px;">Покупай бусты и кейсы!</div>
+<div class="shop-grid">
+<div class="shop-item">
+<span class="sicon">📦</span>
+<div class="sname">КЕЙС</div>
+<div class="sprice">💰 1000 монет</div>
+<div class="sdesc">🎨 Случайный скин</div>
+<button class="shop-btn" id="buyCaseBtn">КУПИТЬ</button>
+</div>
+<div class="shop-item">
+<span class="sicon">💰</span>
+<div class="sname">2x МОНЕТЫ</div>
+<div class="sprice">💰 5000 монет</div>
+<div class="sdesc">Удваивает награду за победу</div>
+<button class="shop-btn" id="buyCoinBoostBtn">КУПИТЬ</button>
+<div class="shop-buffs" id="coinBoostStatus"></div>
+</div>
+<div class="shop-item">
+<span class="sicon">🍀</span>
+<div class="sname">2x УДАЧА</div>
+<div class="sprice">💰 8000 монет</div>
+<div class="sdesc">Удваивает шанс на редкие скины</div>
+<button class="shop-btn" id="buyLuckBoostBtn">КУПИТЬ</button>
+<div class="shop-buffs" id="luckBoostStatus"></div>
+</div>
+</div>
+<div style="color:#7f8fa0; font-size:10px; margin-top:6px;">💡 Бусты действуют 24 часа</div>
+</div>
+
+<div id="inventoryScreen" class="screen">
+<button class="close-inv" id="closeInv">✕ ЗАКРЫТЬ</button>
+<h2>📦 ИНВЕНТАРЬ</h2>
+<div class="inv-stats">
+<div>📦 Кейсы: <span id="invCases">0</span></div>
+<div>🎨 Скинов: <span id="invSkins">0</span></div>
+</div>
+<div class="inv-grid" id="invGrid"></div>
+<div style="color:#7f8fa0; font-size:10px; margin-top:4px;">📦 Нажми на кейс, чтобы открыть!</div>
+</div>
+
+<div id="mapScreen" class="screen">
+<button class="back-btn" id="backFromMap">◀ НАЗАД</button>
+<h2 style="color:#b3d9ff; font-size:24px; margin-top:8px;">ВЫБЕРИ ПЛАНЕТУ</h2>
+<div class="map-grid">
+<div class="map-card" data-map="earth">🌍<br>ЗЕМЛЯ</div>
+<div class="map-card" data-map="moon">🌙<br>ЛУНА</div>
+<div class="map-card" data-map="mars">🔴<br>МАРС</div>
+<div class="map-card" data-map="jupiter">🟠<br>ЮПИТЕР</div>
+</div>
+</div>
+
+<div id="pvpScreen" class="screen">
+<button class="back-btn" id="backFromPvp">◀ НАЗАД</button>
+<h2>⚔️ 5 НА 5 (7 волн)</h2>
+<div class="pvp-teams">
+<div class="pvp-team blue"><div class="team-label blue">🔵 КОСМОНАВТЫ</div><div class="team-count">5 игроков</div></div>
+<div class="pvp-team green"><div class="team-label green">🟢 ИНОПЛАНЕТЯНЕ</div><div class="team-count">5 игроков</div></div>
+</div>
+<div class="pvp-waves-info">🌊 <span>7 ВОЛН</span> | 🏆 <span>+100 ТРОФЕЕВ</span></div>
+<div style="color:#aac9ff; margin-bottom:4px;">🏆 Победа: <span style="color:#ffd700;">700 монет + 100 трофеев</span></div>
+<button class="pvp-btn" id="pvpStartBtn">⚔️ НАЧАТЬ</button>
+<div class="pvp-info">Вы играете за <span style="color:#4488ff;">синих</span></div>
+</div>
+
+<div id="gameScreen" class="screen">
+<div id="gameWrapper">
+<canvas id="gameCanvas"></canvas>
+</div>
+<div class="game-hud" id="gameHud">
+<div>❤️ <span id="hudHealth">3</span></div>
+<div>💀 <span id="hudKills">0</span></div>
+<div>🌊 <span id="hudWave">1</span></div>
+<div>🪙 <span id="hudCoins">0</span></div>
+<div id="hudInvisibility" style="color:#aa88ff; display:none;">👻 НЕВИДИМ</div>
+<div id="hudTeam" class="hud-team blue">🔵 КОСМОНАВТ</div>
+<div id="hudBuffs" class="hud-buff"></div>
+<button id="gameAdminToggle">👑</button>
+</div>
+<div class="wave-announce" id="waveAnnounce">🌊 ВОЛНА 1</div>
+<div class="victory-msg" id="victoryMsg">🏆 ПОБЕДА! +700 🪙 +100 🏆</div>
+<div class="defeat-msg" id="defeatMsg">💀 ВЫ ПАЛИ</div>
+<button id="backFromGame">◀ В МЕНЮ</button>
+<div id="gameAdminPanel">
+<button class="close-admin-game" id="closeGameAdmin">✕</button>
+<h3>👑 АДМИН</h3>
+<div class="admin-grid">
+<button class="admin-btn" id="gameAdminHeal">❤️ Лечить</button>
+<button class="admin-btn" id="gameAdminCoins">💰 +1000</button>
+<button class="admin-btn" id="gameAdminKillAll">💀 Убить всех</button>
+<button class="admin-btn" id="gameAdminNextWave">🌊 След. волна</button>
+<button class="admin-btn" id="gameAdminGodMode">💪 Бог</button>
+<button class="admin-btn danger" id="gameAdminReset">🔄 Сброс</button>
+</div>
+<div class="admin-row"><input class="admin-input" id="gameAdminCoinsInput" type="number" value="500"><button class="admin-btn" id="gameAdminCustomCoins">➕</button></div>
+</div>
+</div>
+
+<div id="skinScreen" class="screen">
+<button class="close-skin" id="closeSkin">✕ ЗАКРЫТЬ</button>
+<h2>👾 МАГАЗИН СКИНОВ</h2>
+<div class="skin-grid" id="skinGrid"></div>
+</div>
+
+<div id="leaderboardScreen" class="screen">
+<button class="close-lb" id="closeLb">✕ ЗАКРЫТЬ</button>
+<h2>🏆 ЛИДЕРБОРД</h2>
+<div class="lb-list" id="lbList"></div>
+</div>
+
+<div id="adminScreen" class="screen">
+<button class="close-admin" id="closeAdmin">✕ ЗАКРЫТЬ</button>
+<h2>👑 АДМИН ПАНЕЛЬ</h2>
+<div class="admin-grid">
+<button class="admin-btn" id="adminAddCoins">💰 +5000</button>
+<button class="admin-btn" id="adminAddCoinsBig">💰 +25000</button>
+<button class="admin-btn" id="adminAllSkins">🎨 Все скины</button>
+<button class="admin-btn danger" id="adminResetProgress">🔄 Сброс</button>
+<button class="admin-btn" id="adminGodMode">💪 Бог</button>
+<button class="admin-btn" id="adminKillAll">💀 Убить всех</button>
+<button class="admin-btn" id="adminNextWave">🌊 След. волна</button>
+<button class="admin-btn" id="adminAddCases">📦 +10 кейсов</button>
+<button class="admin-btn arbuz" id="adminArbuzBtn">🍉 АРБУЗ</button>
+</div>
+<div class="admin-row"><input class="admin-input" id="adminCoinsInput" type="number" value="1000"><button class="admin-btn" id="adminCustomCoins">➕</button></div>
+</div>
+
+<div id="congratsOverlay">
+<div class="congrats-box">
+<span class="cicon">🎉</span>
+<div class="ctitle">ПОЗДРАВЛЯЕМ!</div>
+<div class="cdesc" id="congratsDesc">Вы успешно выполнили действие!</div>
+<button class="cbtn" id="congratsBtn">ОТЛИЧНО!</button>
+</div>
+</div>
+
+</div>
+
+<script>
+// ============================================================
+// ПОЛНАЯ ВЕРСИЯ: ТРОФЕИ + РАНГИ + МАГАЗИН ТРОФЕЕВ + АДМИН АРБУЗ
+// ============================================================
+(function(){
+// ====== ХРАНИЛИЩЕ ======
+let usersDB = {};
+let currentUser = null;
+let globalSettings = {
+    musicEnabled: true,
+    theme: 'cosmic', // cosmic, dark, neon
+    particlesEnabled: true
+};
+
+function loadUsersDB() {
+    try {
+        const data = localStorage.getItem('cosmoUsersDB');
+        if (data) { usersDB = JSON.parse(data); return true; }
+    } catch(e) {}
+    return false;
+}
+function saveUsersDB() {
+    try { localStorage.setItem('cosmoUsersDB', JSON.stringify(usersDB)); } catch(e) {}
+}
+
+function loadGlobalSettings() {
+    try {
+        const data = localStorage.getItem('cosmoGlobalSettings');
+        if (data) { globalSettings = JSON.parse(data); }
+    } catch(e) {}
+}
+function saveGlobalSettings() {
+    try { localStorage.setItem('cosmoGlobalSettings', JSON.stringify(globalSettings)); } catch(e) {}
+}
+
+function ensureAdminExists() {
+    if (!usersDB['ADMIN']) {
+        usersDB['ADMIN'] = {
+            password: 'admin123',
+            email: 'admin@cosmo.game',
+            coins: 99999,
+            trophies: 99999,
+            skin: 'sun',
+            ownedSkins: ['default','gold','cyber','phantom','cosmic','legend','sun','neon','vortex','legendary_trophy'],
+            godMode: true,
+            cases: 10,
+            questProgress: {},
+            completedQuests: {},
+            buffs: { coin: 0, luck: 0 }
+        };
+        saveUsersDB();
+    }
+}
+ensureAdminExists();
+
+function getLeaderboard() {
+    const list = Object.keys(usersDB).map(name => ({
+        name: name,
+        coins: usersDB[name].coins || 0,
+        trophies: usersDB[name].trophies || 0
+    }));
+    list.sort((a, b) => b.trophies - a.trophies || b.coins - a.coins);
+    return list;
+}
+
+function updateLeaderboard() {
+    const list = getLeaderboard();
+    const container = document.getElementById('lbList');
+    container.innerHTML = '';
+    if (list.length === 0) {
+        container.innerHTML = '<div style="color:#7f8fa0; text-align:center; padding:20px;">Нет игроков</div>';
+        return;
+    }
+    list.slice(0, 20).forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'lb-item';
+        if (index === 0) div.classList.add('top1');
+        else if (index === 1) div.classList.add('top2');
+        else if (index === 2) div.classList.add('top3');
+        div.innerHTML = `
+            <span class="lb-rank">#${index + 1}</span>
+            <span class="lb-name">${item.name}</span>
+            <span class="lb-coins">🪙 ${item.coins}</span>
+            <span class="lb-trophies">🏆 ${item.trophies}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+let playerData = {
+    name: '', email: '', password: '', coins: 0, trophies: 0,
+    skin: 'default', ownedSkins: ['default'],
+    isAdmin: false, godMode: false,
+    cases: 0,
+    questProgress: {},
+    completedQuests: {},
+    buffs: { coin: 0, luck: 0 }
+};
+
+// ====== РАНГИ ======
+const RANKS = [
+    { id: 'common', name: '🟢 Новичок', trophies: 0, color: 'rank-color-common', emoji: '🟢' },
+    { id: 'rare', name: '🔵 Боец', trophies: 100, color: 'rank-color-rare', emoji: '🔵' },
+    { id: 'epic', name: '🟣 Ветеран', trophies: 500, color: 'rank-color-epic', emoji: '🟣' },
+    { id: 'legendary', name: '🟠 Мастер', trophies: 1000, color: 'rank-color-legendary', emoji: '🟠' },
+    { id: 'mythic', name: '🔴 Легенда', trophies: 5000, color: 'rank-color-mythic', emoji: '🔴' },
+    { id: 'god', name: '👑 КОСМИЧЕСКИЙ БОГ', trophies: 10000, color: 'rank-color-god', emoji: '🌟' }
+];
+
+function getRank(trophies) {
+    let result = RANKS[0];
+    for (let r of RANKS) {
+        if (trophies >= r.trophies) {
+            result = r;
+        }
+    }
+    return result;
+}
+
+function updateRankUI() {
+    const rank = getRank(playerData.trophies);
+    const rankEl = document.getElementById('profileRank');
+    const popupRank = document.getElementById('popupRank');
+    if (rankEl) {
+        rankEl.innerHTML = `<span class="rank-badge">${rank.emoji}</span> <span class="rank-name ${rank.color}">${rank.name}</span>`;
+    }
+    if (popupRank) {
+        popupRank.innerHTML = `🏅 Ранг: <span class="${rank.color}">${rank.emoji} ${rank.name}</span>`;
+    }
+}
+
+// ====== СКИНЫ ======
+const SKINS = [
+    { id: 'default', name: 'Стандарт', price: 0, icon: '🧑‍🚀', effect: 'Нет', rarity: 'common', weight: 40, howto: 'Пассивный' },
+    { id: 'gold', name: 'Золотой', price: 1500, icon: '🥇', effect: '+20% скорость', rarity: 'rare', weight: 20, howto: 'Пассивный' },
+    { id: 'cyber', name: 'Кибер', price: 4500, icon: '🤖', effect: 'Двойной выстрел', rarity: 'rare', weight: 18, howto: 'Пассивный' },
+    { id: 'phantom', name: 'Призрак', price: 12000, icon: '👻', effect: 'Невидимость 3с', rarity: 'epic', weight: 10, howto: 'Нажми F' },
+    { id: 'cosmic', name: 'Космический', price: 30000, icon: '🌌', effect: 'Телепорт 100px', rarity: 'epic', weight: 8, howto: 'Нажми F' },
+    { id: 'legend', name: 'Легенда', price: 70000, icon: '⭐', effect: 'Регенерация HP', rarity: 'legendary', weight: 4, howto: 'Пассивный' },
+    { id: 'sun', name: 'Луч Солнца', price: 50000, icon: '☀️', effect: 'x2 скорость', rarity: 'mythic', weight: 1, howto: 'Пассивный' },
+    { id: 'neon', name: 'Неоновый', price: 8000, icon: '💜', effect: '+15% скорость', rarity: 'rare', weight: 15, howto: 'Пассивный' },
+    { id: 'vortex', name: 'Вихрь', price: 25000, icon: '🌀', effect: 'Телепорт 200px', rarity: 'epic', weight: 6, howto: 'Нажми F' },
+    { id: 'legendary_trophy', name: '🏆 Легендарный', price: 0, icon: '⭐', effect: '+30% скорость', rarity: 'legendary', weight: 0, howto: 'Только за трофеи' }
+];
+
+// ====== КВЕСТЫ ======
+const QUEST_TYPES = {
+    kill: { label: 'Убить врагов', icon: '💀' },
+    win: { label: 'Побед в матчах', icon: '🏆' },
+    buy_skins: { label: 'Купить скинов', icon: '🎨' },
+    play: { label: 'Сыграть матчей', icon: '⚔️' },
+    waves: { label: 'Волн пройдено', icon: '🌊' },
+    damage: { label: 'Нанести урона (тыс.)', icon: '⚡' }
+};
+
+const QUEST_DIFFICULTIES = {
+    easy: { label: '🟢 Лёгкий', reward: 500, color: 'easy' },
+    medium: { label: '🟡 Средний', reward: 1000, color: 'medium' },
+    hard: { label: '🟠 Сложный', reward: 5000, color: 'hard' },
+    veryhard: { label: '🔴 Очень сложный', reward: 10000, color: 'veryhard' }
+};
+
+function generateDailyQuests() {
+    const today = new Date().toDateString();
+    if (playerData.questProgress && playerData.questProgress._date === today && 
+        Object.keys(playerData.questProgress).length > 1) return;
+    
+    playerData.questProgress = { _date: today };
+    
+    const questDefinitions = [
+        { type: 'kill', target: 10, difficulty: 'easy', desc: 'Убей 10 врагов' },
+        { type: 'play', target: 3, difficulty: 'easy', desc: 'Сыграй 3 матча' },
+        { type: 'kill', target: 25, difficulty: 'medium', desc: 'Убей 25 врагов' },
+        { type: 'win', target: 3, difficulty: 'medium', desc: 'Победи в 3 матчах' },
+        { type: 'waves', target: 10, difficulty: 'medium', desc: 'Пройди 10 волн' },
+        { type: 'kill', target: 50, difficulty: 'hard', desc: 'Убей 50 врагов' },
+        { type: 'win', target: 5, difficulty: 'hard', desc: 'Победи в 5 матчах' },
+        { type: 'waves', target: 20, difficulty: 'hard', desc: 'Пройди 20 волн' },
+        { type: 'damage', target: 10, difficulty: 'hard', desc: 'Нанеси 10000 урона' },
+        { type: 'kill', target: 100, difficulty: 'veryhard', desc: 'Убей 100 врагов' },
+        { type: 'win', target: 10, difficulty: 'veryhard', desc: 'Победи в 10 матчах' },
+        { type: 'waves', target: 35, difficulty: 'veryhard', desc: 'Пройди 35 волн' }
+    ];
+    
+    const easyQuests = questDefinitions.filter(q => q.difficulty === 'easy');
+    const mediumQuests = questDefinitions.filter(q => q.difficulty === 'medium');
+    const hardQuests = questDefinitions.filter(q => q.difficulty === 'hard');
+    const veryHardQuests = questDefinitions.filter(q => q.difficulty === 'veryhard');
+    
+    const selected = [];
+    if (easyQuests.length) selected.push(easyQuests[Math.floor(Math.random() * easyQuests.length)]);
+    if (mediumQuests.length) selected.push(mediumQuests[Math.floor(Math.random() * mediumQuests.length)]);
+    if (hardQuests.length) selected.push(hardQuests[Math.floor(Math.random() * hardQuests.length)]);
+    if (veryHardQuests.length) selected.push(veryHardQuests[Math.floor(Math.random() * veryHardQuests.length)]);
+    
+    selected.forEach((q, index) => {
+        const key = 'quest_' + index;
+        playerData.questProgress[key] = {
+            type: q.type,
+            target: q.target,
+            current: 0,
+            difficulty: q.difficulty,
+            desc: q.desc,
+            completed: false,
+            claimed: false
+        };
+    });
+}
+
+function getQuestsList() {
+    const list = [];
+    const today = new Date().toDateString();
+    if (!playerData.questProgress || playerData.questProgress._date !== today) {
+        generateDailyQuests();
+    }
+    Object.keys(playerData.questProgress).forEach(key => {
+        if (key === '_date') return;
+        const q = playerData.questProgress[key];
+        list.push({ key: key, ...q });
+    });
+    return list;
+}
+
+function updateQuestProgress(type, amount = 1) {
+    const today = new Date().toDateString();
+    if (!playerData.questProgress || playerData.questProgress._date !== today) {
+        generateDailyQuests();
+    }
+    Object.keys(playerData.questProgress).forEach(key => {
+        if (key === '_date') return;
+        const q = playerData.questProgress[key];
+        if (q.completed || q.claimed) return;
+        if (q.type === type) {
+            q.current += amount;
+            if (q.current >= q.target) {
+                q.completed = true;
+                showQuestCompleteNotification(q);
+            }
+        }
+    });
+    saveUsersDB();
+}
+
+function showQuestCompleteNotification(q) {
+    const diff = QUEST_DIFFICULTIES[q.difficulty];
+    congratsDesc.textContent = `🎉 Квест выполнен! +${diff.reward} монет за "${q.desc}"`;
+    document.getElementById('congratsOverlay').classList.add('show');
+    setTimeout(() => {
+        document.getElementById('congratsOverlay').classList.remove('show');
+    }, 3000);
+}
+
+function claimQuestReward(key) {
+    const today = new Date().toDateString();
+    if (!playerData.questProgress || playerData.questProgress._date !== today) return false;
+    const q = playerData.questProgress[key];
+    if (!q || !q.completed || q.claimed) return false;
+    const diff = QUEST_DIFFICULTIES[q.difficulty];
+    playerData.coins += diff.reward;
+    q.claimed = true;
+    if (currentUser && usersDB[currentUser]) {
+        usersDB[currentUser].coins = playerData.coins;
+        usersDB[currentUser].questProgress = playerData.questProgress;
+    }
+    saveUsersDB();
+    updateProfileUI();
+    renderQuests();
+    updateLeaderboard();
+    congratsDesc.textContent = `💰 Вы получили ${diff.reward} монет!`;
+    document.getElementById('congratsOverlay').classList.add('show');
+    return true;
+}
+
+function renderQuests() {
+    const container = document.getElementById('questList');
+    const quests = getQuestsList();
+    if (quests.length === 0) {
+        container.innerHTML = '<div style="color:#7f8fa0; text-align:center; padding:20px;">Квесты не найдены</div>';
+        return;
+    }
+    container.innerHTML = '';
+    quests.forEach(q => {
+        const diff = QUEST_DIFFICULTIES[q.difficulty];
+        const progress = Math.min(q.current, q.target);
+        const percent = (progress / q.target * 100).toFixed(0);
+        const isCompleted = q.completed;
+        const isClaimed = q.claimed;
+        const div = document.createElement('div');
+        div.className = 'quest-item' + (isCompleted ? ' completed' : '');
+        div.innerHTML = `
+            <div class="qinfo">
+                <div class="qname">${q.desc}</div>
+                <div class="qdesc">${QUEST_TYPES[q.type]?.icon || '📋'} ${QUEST_TYPES[q.type]?.label || q.type}</div>
+                <div class="qprogress">📊 ${progress} / ${q.target} (${percent}%)</div>
+                <span class="q-difficulty ${diff.color}">${diff.label}</span>
+            </div>
+            <div class="qreward">
+                <div class="qcoins">🪙 ${diff.reward}</div>
+                ${isClaimed ? 
+                    '<span class="qstatus done">✅ Получено</span>' :
+                    isCompleted ? 
+                    `<button class="qbtn completed-btn" data-key="${q.key}">ЗАБРАТЬ</button>` :
+                    `<span class="qstatus pending">⏳ В процессе</span>`
+                }
+            </div>
+        `;
+        container.appendChild(div);
+    });
+    container.querySelectorAll('.qbtn.completed-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const key = this.dataset.key;
+            claimQuestReward(key);
+        });
+    });
+}
+
+// ====== БУСТЫ ======
+function updateBuffsUI() {
+    const now = Date.now();
+    const coinActive = playerData.buffs.coin > now;
+    const luckActive = playerData.buffs.luck > now;
+    
+    const coinStatus = document.getElementById('coinBoostStatus');
+    const luckStatus = document.getElementById('luckBoostStatus');
+    const buffsHud = document.getElementById('hudBuffs');
+    
+    if (coinActive) {
+        const remaining = Math.ceil((playerData.buffs.coin - now) / 3600000);
+        coinStatus.innerHTML = `<span class="shop-buff active">✅ ${remaining}ч</span>`;
+    } else {
+        coinStatus.innerHTML = `<span class="shop-buff">❌ Неактивен</span>`;
+    }
+    if (luckActive) {
+        const remaining = Math.ceil((playerData.buffs.luck - now) / 3600000);
+        luckStatus.innerHTML = `<span class="shop-buff active">✅ ${remaining}ч</span>`;
+    } else {
+        luckStatus.innerHTML = `<span class="shop-buff">❌ Неактивен</span>`;
+    }
+    if (coinActive || luckActive) {
+        buffsHud.innerHTML = (coinActive ? '💰 x2 ' : '') + (luckActive ? '🍀 x2 ' : '');
+        buffsHud.style.display = 'inline';
+    } else {
+        buffsHud.innerHTML = '';
+        buffsHud.style.display = 'none';
+    }
+}
+
+function buyBoost(type) {
+    const now = Date.now();
+    const cost = type === 'coin' ? 5000 : 8000;
+    if (playerData.coins < cost) {
+        alert(`❌ Недостаточно монет! Нужно ${cost} монет.`);
+        return false;
+    }
+    playerData.coins -= cost;
+    if (type === 'coin') {
+        playerData.buffs.coin = Math.max(playerData.buffs.coin, now) + 86400000;
+    } else if (type === 'luck') {
+        playerData.buffs.luck = Math.max(playerData.buffs.luck, now) + 86400000;
+    }
+    if (currentUser && usersDB[currentUser]) {
+        usersDB[currentUser].coins = playerData.coins;
+        usersDB[currentUser].buffs = playerData.buffs;
+    }
+    saveUsersDB();
+    updateProfileUI();
+    updateBuffsUI();
+    updateLeaderboard();
+    const name = type === 'coin' ? '2x МОНЕТЫ' : '2x УДАЧА';
+    congratsDesc.textContent = `🎉 Вы купили "${name}" на 24 часа!`;
+    document.getElementById('congratsOverlay').classList.add('show');
+    return true;
+}
+
+// ====== МУЗЫКА ======
+let audioCtx = null;
+let musicInterval = null;
+let musicPlaying = false;
+let musicStarted = false;
+let noteIndex = 0;
+const melodyNotes = [
+    523,523,659,523,784,523,659,523,
+    523,523,659,523,880,523,659,523,
+    523,523,659,523,784,523,659,523,
+    523,523,659,523,880,523,659,523
+];
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playMenuMusic() {
+    if (!globalSettings.musicEnabled) return;
+    if (musicPlaying) return;
+    try {
+        initAudio();
+        musicPlaying = true;
+        musicStarted = true;
+        noteIndex = 0;
+        if (musicInterval) clearInterval(musicInterval);
+        musicInterval = setInterval(() => {
+            try {
+                const note = melodyNotes[noteIndex % melodyNotes.length];
+                const duration = 0.15;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(note, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + duration);
+                if (noteIndex % 2 === 0) {
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(note * 2, audioCtx.currentTime);
+                    gain2.gain.setValueAtTime(0.025, audioCtx.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                    osc2.start(audioCtx.currentTime);
+                    osc2.stop(audioCtx.currentTime + duration);
+                }
+                if (noteIndex % 4 === 0) {
+                    const bass = audioCtx.createOscillator();
+                    const bassGain = audioCtx.createGain();
+                    bass.connect(bassGain);
+                    bassGain.connect(audioCtx.destination);
+                    bass.type = 'sawtooth';
+                    bass.frequency.setValueAtTime(note / 2, audioCtx.currentTime);
+                    bassGain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                    bassGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration * 1.5);
+                    bass.start(audioCtx.currentTime);
+                    bass.stop(audioCtx.currentTime + duration * 1.5);
+                }
+                noteIndex++;
+            } catch(e) {}
+        }, 180);
+    } catch(e) {}
+}
+
+function stopMenuMusic() {
+    musicPlaying = false;
+    if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
+}
+
+function createMenuAnimation() {
+    const bg = document.getElementById('menuBackground');
+    bg.innerHTML = '';
+    for (let i = 0; i < 40; i++) {
+        const star = document.createElement('div');
+        star.className = 'menu-bg-star';
+        const size = 1 + Math.random() * 3;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDelay = Math.random() * 3 + 's';
+        star.style.animationDuration = 1 + Math.random() * 2 + 's';
+        bg.appendChild(star);
+    }
+    const planets = [
+        { color: '#ff6b6b', size: 45, x: 5, y: 12, delay: 0 },
+        { color: '#4ecdc4', size: 28, x: 88, y: 78, delay: 2 },
+        { color: '#ffe66d', size: 22, x: 8, y: 82, delay: 4 },
+        { color: '#a8e6cf', size: 18, x: 92, y: 8, delay: 1 }
+    ];
+    for (let p of planets) {
+        const planet = document.createElement('div');
+        planet.className = 'menu-bg-planet';
+        planet.style.width = p.size + 'px';
+        planet.style.height = p.size + 'px';
+        planet.style.left = p.x + '%';
+        planet.style.top = p.y + '%';
+        planet.style.background = `radial-gradient(circle at 30% 30%, ${p.color}, ${p.color}88)`;
+        planet.style.boxShadow = `0 0 40px ${p.color}44`;
+        planet.style.animationDelay = p.delay + 's';
+        planet.style.animationDuration = 6 + Math.random() * 4 + 's';
+        bg.appendChild(planet);
+        if (Math.random() > 0.5) {
+            const ring = document.createElement('div');
+            ring.className = 'menu-bg-ring';
+            ring.style.width = (p.size * 1.8) + 'px';
+            ring.style.height = (p.size * 1.8) + 'px';
+            ring.style.left = (p.x - p.size * 0.4) + '%';
+            ring.style.top = (p.y - p.size * 0.4) + '%';
+            ring.style.animationDelay = p.delay + 's';
+            ring.style.animationDuration = 15 + Math.random() * 10 + 's';
+            ring.style.borderColor = `rgba(255,255,255,0.12)`;
+            bg.appendChild(ring);
+        }
+    }
+}
+
+// ====== АВТОРИЗАЦИЯ ======
+loadUsersDB();
+loadGlobalSettings();
+
+const screens = {
+    auth: document.getElementById('authScreen'),
+    menu: document.getElementById('menuScreen'),
+    map: document.getElementById('mapScreen'),
+    game: document.getElementById('gameScreen'),
+    skin: document.getElementById('skinScreen'),
+    leaderboard: document.getElementById('leaderboardScreen'),
+    admin: document.getElementById('adminScreen'),
+    pvp: document.getElementById('pvpScreen'),
+    shop: document.getElementById('shopScreen'),
+    inventory: document.getElementById('inventoryScreen'),
+    quest: document.getElementById('questScreen'),
+    trophyShop: document.getElementById('trophyShopScreen'),
+    adminArbuz: document.getElementById('adminArbuzScreen')
+};
+const authError = document.getElementById('authError');
+const adminBtn = document.getElementById('adminBtn');
+const profilePopup = document.getElementById('profilePopup');
+const profileName = document.getElementById('profileName');
+const profileCoins = document.getElementById('profileCoins');
+const profileTrophies = document.getElementById('profileTrophies');
+const avatarIcon = document.getElementById('avatarIcon');
+const popupName = document.getElementById('popupName');
+const popupEmail = document.getElementById('popupEmail');
+const popupCoins = document.getElementById('popupCoins');
+const popupTrophies = document.getElementById('popupTrophies');
+const hudHealth = document.getElementById('hudHealth');
+const hudKills = document.getElementById('hudKills');
+const hudWave = document.getElementById('hudWave');
+const hudCoins = document.getElementById('hudCoins');
+const hudTeam = document.getElementById('hudTeam');
+const victoryMsg = document.getElementById('victoryMsg');
+const defeatMsg = document.getElementById('defeatMsg');
+const waveAnnounce = document.getElementById('waveAnnounce');
+const congratsOverlay = document.getElementById('congratsOverlay');
+const congratsDesc = document.getElementById('congratsDesc');
+
+function showScreen(id) {
+    Object.keys(screens).forEach(key => {
+        screens[key].classList.toggle('active', key === id);
+    });
+    if (id === 'menu') {
+        createMenuAnimation();
+        if (globalSettings.musicEnabled && (!musicStarted || !musicPlaying)) {
+            playMenuMusic();
+        }
+        updateProfileUI();
+        updateLeaderboard();
+        updateBuffsUI();
+    }
+    if (id === 'quest') {
+        renderQuests();
+    }
+    if (id === 'shop') {
+        updateBuffsUI();
+    }
+    if (id === 'trophyShop') {
+        document.getElementById('trophyShopBalance').textContent = playerData.trophies;
+        updateTrophyShopButtons();
+    }
+    if (id === 'auth') profilePopup.classList.remove('show');
+    if (id !== 'game') document.getElementById('gameAdminPanel').classList.remove('show');
+}
+
+function loginUser(name, password) {
+    if (!usersDB[name]) { authError.textContent = '❌ Пользователь не найден!'; return false; }
+    if (usersDB[name].password !== password) { authError.textContent = '❌ Неверный пароль!'; return false; }
+    playerData = JSON.parse(JSON.stringify(usersDB[name]));
+    playerData.name = name;
+    playerData.password = password;
+    playerData.isAdmin = (name.toUpperCase() === 'ADMIN');
+    currentUser = name;
+    authError.textContent = '';
+    generateDailyQuests();
+    showScreen('menu');
+    updateProfileUI();
+    checkAdmin();
+    updateBuffsUI();
+    updateRankUI();
+    return true;
+}
+
+function registerUser(name, password) {
+    if (!name || name.length < 2) { authError.textContent = '❌ Имя минимум 2 символа!'; return false; }
+    if (password.length < 3) { authError.textContent = '❌ Пароль минимум 3 символа!'; return false; }
+    if (usersDB[name]) { authError.textContent = '❌ Имя уже занято!'; return false; }
+    const newUser = {
+        password: password,
+        email: name + '@cosmo.game',
+        coins: 0,
+        trophies: 0,
+        skin: 'default',
+        ownedSkins: ['default'],
+        godMode: false,
+        cases: 0,
+        questProgress: {},
+        completedQuests: {},
+        buffs: { coin: 0, luck: 0 }
+    };
+    usersDB[name] = newUser;
+    saveUsersDB();
+    playerData = JSON.parse(JSON.stringify(newUser));
+    playerData.name = name;
+    playerData.password = password;
+    playerData.isAdmin = (name.toUpperCase() === 'ADMIN');
+    currentUser = name;
+    authError.textContent = '';
+    generateDailyQuests();
+    showScreen('menu');
+    updateProfileUI();
+    checkAdmin();
+    updateLeaderboard();
+    updateBuffsUI();
+    updateRankUI();
+    return true;
+}
+
+function logoutUser() {
+    if (currentUser && usersDB[currentUser]) {
+        usersDB[currentUser].coins = playerData.coins;
+        usersDB[currentUser].trophies = playerData.trophies;
+        usersDB[currentUser].skin = playerData.skin;
+        usersDB[currentUser].ownedSkins = playerData.ownedSkins;
+        usersDB[currentUser].cases = playerData.cases;
+        usersDB[currentUser].questProgress = playerData.questProgress;
+        usersDB[currentUser].buffs = playerData.buffs;
+        saveUsersDB();
+    }
+    currentUser = null;
+    playerData = {
+        name: '', email: '', password: '', coins: 0, trophies: 0,
+        skin: 'default', ownedSkins: ['default'],
+        isAdmin: false, godMode: false,
+        cases: 0,
+        questProgress: {},
+        completedQuests: {},
+        buffs: { coin: 0, luck: 0 }
+    };
+    profilePopup.classList.remove('show');
+    showScreen('auth');
+    updateLeaderboard();
+}
+
+// ====== СОБЫТИЯ ======
+document.getElementById('authLoginBtn').addEventListener('click', function() {
+    const name = document.getElementById('authLogin').value.trim();
+    const password = document.getElementById('authPassword').value;
+    loginUser(name, password);
+});
+document.getElementById('authRegisterBtn').addEventListener('click', function() {
+    const name = document.getElementById('authLogin').value.trim();
+    const password = document.getElementById('authPassword').value;
+    registerUser(name, password);
+});
+document.getElementById('authPassword').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('authLoginBtn').click();
+});
+document.getElementById('authLogin').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('authPassword').focus();
+});
+
+document.getElementById('profileBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    profilePopup.classList.toggle('show');
+    if (profilePopup.classList.contains('show')) {
+        popupName.textContent = '👤 ' + playerData.name;
+        popupEmail.textContent = '📧 ' + (playerData.email || 'Нет почты');
+        popupCoins.textContent = '🪙 ' + playerData.coins + ' монет';
+        popupTrophies.textContent = '🏆 ' + playerData.trophies + ' трофеев';
+        const rank = getRank(playerData.trophies);
+        popupRank.innerHTML = `🏅 Ранг: <span class="${rank.color}">${rank.emoji} ${rank.name}</span>`;
+    }
+});
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#profilePopup') && !e.target.closest('#profileBtn')) {
+        profilePopup.classList.remove('show');
+    }
+});
+document.getElementById('logoutBtn').addEventListener('click', function() {
+    if (confirm('Выйти из профиля?')) logoutUser();
+});
+
+// ====== МЕНЮ ======
+document.getElementById('playBtn').addEventListener('click', ()=>{
+    if (playerData.name) { isPvpMode = false; maxWaves = 5; showScreen('map'); }
+});
+document.getElementById('pvpBtn').addEventListener('click', ()=>{
+    if (playerData.name) { showScreen('pvp'); }
+});
+document.getElementById('questBtn').addEventListener('click', ()=>{
+    if (playerData.name) { renderQuests(); showScreen('quest'); }
+});
+document.getElementById('closeQuest').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+document.getElementById('backFromPvp').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+document.getElementById('pvpStartBtn').addEventListener('click', ()=>{
+    isPvpMode = true;
+    maxWaves = 7;
+    startGame();
+});
+document.getElementById('backFromMap').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+document.getElementById('backFromGame').addEventListener('click', ()=>{
+    stopGame(); 
+    document.getElementById('gameAdminPanel').classList.remove('show');
+    showScreen('menu'); updateProfileUI();
+});
+document.getElementById('skinBtn').addEventListener('click', ()=>{
+    if (playerData.name) { renderSkinShop(); showScreen('skin'); }
+});
+document.getElementById('closeSkin').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+document.getElementById('leaderboardBtn').addEventListener('click', ()=>{
+    updateLeaderboard(); showScreen('leaderboard');
+});
+document.getElementById('closeLb').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+document.getElementById('trophyShopBtn').addEventListener('click', ()=>{
+    if (playerData.name) { 
+        document.getElementById('trophyShopBalance').textContent = playerData.trophies;
+        updateTrophyShopButtons();
+        showScreen('trophyShop'); 
+    }
+});
+document.getElementById('closeTrophyShop').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+
+// ====== МАГАЗИН ТРОФЕЕВ ======
+function updateTrophyShopButtons() {
+    const coinsBtn = document.getElementById('buyCoinsForTrophies');
+    const skinBtn = document.getElementById('buyLegendarySkin');
+    const hasLegendarySkin = playerData.ownedSkins.includes('legendary_trophy');
+    
+    coinsBtn.disabled = playerData.trophies < 1000;
+    skinBtn.disabled = playerData.trophies < 10000 || hasLegendarySkin;
+    skinBtn.textContent = hasLegendarySkin ? '✅ КУПЛЕНО' : 'КУПИТЬ';
+}
+
+document.getElementById('buyCoinsForTrophies').addEventListener('click', function() {
+    if (playerData.trophies >= 1000) {
+        playerData.trophies -= 1000;
+        playerData.coins += 10000;
+        if (currentUser && usersDB[currentUser]) {
+            usersDB[currentUser].trophies = playerData.trophies;
+            usersDB[currentUser].coins = playerData.coins;
+        }
+        saveUsersDB();
+        updateProfileUI();
+        updateLeaderboard();
+        document.getElementById('trophyShopBalance').textContent = playerData.trophies;
+        updateTrophyShopButtons();
+        congratsDesc.textContent = `💰 Вы обменяли 1000 трофеев на 10000 монет!`;
+        document.getElementById('congratsOverlay').classList.add('show');
+    }
+});
+
+document.getElementById('buyLegendarySkin').addEventListener('click', function() {
+    if (playerData.trophies >= 10000 && !playerData.ownedSkins.includes('legendary_trophy')) {
+        playerData.trophies -= 10000;
+        playerData.ownedSkins.push('legendary_trophy');
+        playerData.skin = 'legendary_trophy';
+        if (currentUser && usersDB[currentUser]) {
+            usersDB[currentUser].trophies = playerData.trophies;
+            usersDB[currentUser].ownedSkins = playerData.ownedSkins;
+            usersDB[currentUser].skin = playerData.skin;
+        }
+        saveUsersDB();
+        updateProfileUI();
+        updateLeaderboard();
+        document.getElementById('trophyShopBalance').textContent = playerData.trophies;
+        updateTrophyShopButtons();
+        congratsDesc.textContent = `⭐ Вы получили ЛЕГЕНДАРНЫЙ СКИН! +30% скорости!`;
+        document.getElementById('congratsOverlay').classList.add('show');
+        renderSkinShop();
+    }
+});
+
+// ====== МАГАЗИН ======
+document.getElementById('shopBtn').addEventListener('click', ()=>{
+    if (playerData.name) { updateBuffsUI(); showScreen('shop'); }
+});
+document.getElementById('closeShop').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+
+document.getElementById('buyCaseBtn').addEventListener('click', function() {
+    if (playerData.coins >= 1000) {
+        playerData.coins -= 1000;
+        playerData.cases += 1;
+        if (currentUser && usersDB[currentUser]) {
+            usersDB[currentUser].coins = playerData.coins;
+            usersDB[currentUser].cases = playerData.cases;
+        }
+        saveUsersDB();
+        updateProfileUI();
+        updateInventoryUI();
+        congratsDesc.textContent = '🎉 Вы успешно купили кейс! Зайдите в инвентарь, чтобы открыть его.';
+        document.getElementById('congratsOverlay').classList.add('show');
+    } else {
+        alert('❌ Недостаточно монет! Нужно 1000 монет.');
+    }
+});
+
+document.getElementById('buyCoinBoostBtn').addEventListener('click', function() {
+    if (buyBoost('coin')) {
+        updateBuffsUI();
+    }
+});
+
+document.getElementById('buyLuckBoostBtn').addEventListener('click', function() {
+    if (buyBoost('luck')) {
+        updateBuffsUI();
+    }
+});
+
+document.getElementById('congratsBtn').addEventListener('click', function() {
+    congratsOverlay.classList.remove('show');
+});
+
+// ====== ИНВЕНТАРЬ ======
+document.getElementById('inventoryBtn').addEventListener('click', ()=>{
+    if (playerData.name) { updateInventoryUI(); showScreen('inventory'); }
+});
+document.getElementById('closeInv').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+
+function updateInventoryUI() {
+    document.getElementById('invCases').textContent = playerData.cases;
+    document.getElementById('invSkins').textContent = playerData.ownedSkins.length;
+    const grid = document.getElementById('invGrid');
+    grid.innerHTML = '';
+    if (playerData.cases > 0) {
+        for (let i = 0; i < Math.min(playerData.cases, 30); i++) {
+            const div = document.createElement('div');
+            div.className = 'inv-item';
+            div.innerHTML = `
+                <span class="preview">📦</span>
+                <div class="iname">Кейс #${i+1}</div>
+                <div class="icount">Нажми чтобы открыть</div>
+            `;
+            div.addEventListener('click', function() { openCase(); });
+            grid.appendChild(div);
+        }
+    }
+    playerData.ownedSkins.forEach(skinId => {
+        const skin = SKINS.find(s => s.id === skinId);
+        if (skin) {
+            const div = document.createElement('div');
+            div.className = 'inv-item';
+            const isCurrent = playerData.skin === skinId;
+            div.innerHTML = `
+                <span class="preview">${skin.icon}</span>
+                <div class="iname">${skin.name}</div>
+                <div class="icount">${isCurrent ? '✅ ВЫБРАН' : skin.rarity || ''}</div>
+            `;
+            if (!isCurrent) {
+                div.style.cursor = 'pointer';
+                div.addEventListener('click', function() {
+                    playerData.skin = skinId;
+                    if (currentUser && usersDB[currentUser]) usersDB[currentUser].skin = skinId;
+                    saveUsersDB();
+                    updateProfileUI();
+                    updateInventoryUI();
+                    alert('✅ Скин "' + skin.name + '" выбран!');
+                });
+            }
+            grid.appendChild(div);
+        }
+    });
+    if (grid.children.length === 0) {
+        grid.innerHTML = '<div style="color:#7f8fa0; text-align:center; padding:20px; width:100%;">У вас пока ничего нет</div>';
+    }
+}
+
+function openCase() {
+    if (playerData.cases <= 0) {
+        alert('❌ У вас нет кейсов! Купите их в магазине.');
+        return;
+    }
+    playerData.cases--;
+    
+    let availableSkins = SKINS.filter(s => !playerData.ownedSkins.includes(s.id));
+    // Убираем легендарный скин из обычных кейсов
+    availableSkins = availableSkins.filter(s => s.id !== 'legendary_trophy');
+    
+    let wonSkin = null;
+    if (availableSkins.length > 0) {
+        let totalWeight = availableSkins.reduce((sum, s) => sum + (s.weight || 10), 0);
+        // Бонус удачи (2x шанс на редкие скины)
+        let luckBonus = 1;
+        if (playerData.buffs.luck > Date.now()) {
+            luckBonus = 2;
+        }
+        let roll = Math.random() * totalWeight * luckBonus;
+        let currentWeight = 0;
+        for (let skin of availableSkins) {
+            currentWeight += (skin.weight || 10) * luckBonus;
+            if (roll < currentWeight) {
+                wonSkin = skin;
+                break;
+            }
+        }
+        if (!wonSkin) wonSkin = availableSkins[0];
+        playerData.ownedSkins.push(wonSkin.id);
+    }
+    
+    if (currentUser && usersDB[currentUser]) {
+        usersDB[currentUser].cases = playerData.cases;
+        usersDB[currentUser].ownedSkins = playerData.ownedSkins;
+    }
+    saveUsersDB();
+    updateProfileUI();
+    updateInventoryUI();
+    
+    if (wonSkin) {
+        let rarityEmoji = '🎨';
+        if (wonSkin.rarity === 'mythic') rarityEmoji = '🌟🌟🌟';
+        else if (wonSkin.rarity === 'legendary') rarityEmoji = '⭐';
+        else if (wonSkin.rarity === 'epic') rarityEmoji = '💜';
+        else if (wonSkin.rarity === 'rare') rarityEmoji = '🔵';
+        alert(rarityEmoji + ' Вы получили скин: ' + wonSkin.icon + ' ' + wonSkin.name + ' (' + wonSkin.rarity + ')!');
+        if (wonSkin.id === 'sun') {
+            waveAnnounce.textContent = '🌟🌟🌟 ЛУЧ СОЛНЦА ПОЛУЧЕН! 🌟🌟🌟';
+            waveAnnounce.classList.add('show');
+            setTimeout(() => waveAnnounce.classList.remove('show'), 4000);
+        }
+        updateQuestProgress('buy_skins', 1);
+    } else {
+        alert('😔 Все скины уже собраны!');
+    }
+}
+
+// ====== АДМИНКА ======
+document.getElementById('adminBtn').addEventListener('click', ()=>{ showScreen('admin'); });
+document.getElementById('closeAdmin').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+
+function checkAdmin() {
+    adminBtn.style.display = playerData.isAdmin ? 'block' : 'none';
+}
+
+document.getElementById('adminAddCoins').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    playerData.coins += 5000;
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].coins = playerData.coins;
+    saveUsersDB(); updateProfileUI(); updateLeaderboard(); alert('💰 +5000 монет!');
+});
+document.getElementById('adminAddCoinsBig').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    playerData.coins += 25000;
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].coins = playerData.coins;
+    saveUsersDB(); updateProfileUI(); updateLeaderboard(); alert('💰 +25000 монет!');
+});
+document.getElementById('adminCustomCoins').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    const input = document.getElementById('adminCoinsInput');
+    const amount = parseInt(input.value);
+    if (isNaN(amount) || amount <= 0) { alert('Введите число!'); return; }
+    playerData.coins += amount;
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].coins = playerData.coins;
+    saveUsersDB(); updateProfileUI(); updateLeaderboard(); alert('💰 +' + amount + ' монет!');
+});
+document.getElementById('adminAllSkins').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    SKINS.forEach(s => { if (!playerData.ownedSkins.includes(s.id)) playerData.ownedSkins.push(s.id); });
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].ownedSkins = playerData.ownedSkins;
+    saveUsersDB(); updateProfileUI(); alert('🎨 Все скины получены!');
+});
+document.getElementById('adminResetProgress').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    if (confirm('⚠️ Сбросить весь прогресс?')) {
+        playerData.coins = 0; playerData.trophies = 0;
+        playerData.ownedSkins = ['default']; playerData.skin = 'default'; playerData.cases = 0;
+        playerData.questProgress = {};
+        playerData.buffs = { coin: 0, luck: 0 };
+        if (currentUser && usersDB[currentUser]) {
+            usersDB[currentUser].coins = 0; usersDB[currentUser].trophies = 0;
+            usersDB[currentUser].ownedSkins = ['default']; usersDB[currentUser].skin = 'default';
+            usersDB[currentUser].cases = 0; usersDB[currentUser].questProgress = {};
+            usersDB[currentUser].buffs = { coin: 0, luck: 0 };
+        }
+        saveUsersDB(); updateProfileUI(); updateLeaderboard(); updateBuffsUI(); updateRankUI(); alert('🔄 Прогресс сброшен!');
+    }
+});
+document.getElementById('adminGodMode').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    playerData.godMode = !playerData.godMode;
+    godModeActive = playerData.godMode;
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].godMode = playerData.godMode;
+    saveUsersDB(); alert(playerData.godMode ? '💪 Режим Бога ВКЛЮЧЕН' : '💪 Режим Бога ВЫКЛЮЧЕН');
+});
+document.getElementById('adminKillAll').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    if (gameRunning) { enemies = []; kills = waveEnemiesTotal; updateHUD(); alert('💀 Все враги уничтожены!'); }
+    else { alert('Игра не запущена!'); }
+});
+document.getElementById('adminNextWave').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    if (gameRunning && currentWave < maxWaves && !isPvpMode) {
+        startNextWave(); alert('🌊 Следующая волна!');
+    } else { alert('Игра не запущена или все волны пройдены!'); }
+});
+document.getElementById('adminAddCases').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    playerData.cases += 10;
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].cases = playerData.cases;
+    saveUsersDB(); updateProfileUI(); updateInventoryUI(); alert('📦 +10 кейсов!');
+});
+
+// ====== АДМИН АРБУЗ ======
+document.getElementById('adminArbuzBtn').addEventListener('click', ()=>{
+    if (!playerData.isAdmin) return;
+    showScreen('adminArbuz');
+    // Обновляем состояние кнопок
+    document.getElementById('arbuzMusicToggle').classList.toggle('active', globalSettings.musicEnabled);
+    document.getElementById('arbuzThemeToggle').classList.toggle('active', globalSettings.theme === 'cosmic');
+    document.getElementById('arbuzParticlesToggle').classList.toggle('active', globalSettings.particlesEnabled);
+});
+document.getElementById('closeAdminArbuz').addEventListener('click', ()=>{
+    showScreen('menu'); updateProfileUI();
+});
+
+document.getElementById('arbuzMusicToggle').addEventListener('click', function() {
+    if (!playerData.isAdmin) return;
+    globalSettings.musicEnabled = !globalSettings.musicEnabled;
+    saveGlobalSettings();
+    this.classList.toggle('active', globalSettings.musicEnabled);
+    if (globalSettings.musicEnabled) {
+        playMenuMusic();
+        alert('🎵 Музыка включена для всех!');
+    } else {
+        stopMenuMusic();
+        alert('🔇 Музыка выключена для всех!');
+    }
+});
+
+document.getElementById('arbuzThemeToggle').addEventListener('click', function() {
+    if (!playerData.isAdmin) return;
+    globalSettings.theme = globalSettings.theme === 'cosmic' ? 'dark' : 'cosmic';
+    saveGlobalSettings();
+    this.classList.toggle('active', globalSettings.theme === 'cosmic');
+    // Меняем цвета меню
+    const container = document.getElementById('gameContainer');
+    if (globalSettings.theme === 'dark') {
+        container.style.background = '#0a0a12';
+        document.querySelector('.faceblox-title').style.color = '#8888cc';
+    } else {
+        container.style.background = '#10141f';
+        document.querySelector('.faceblox-title').style.color = '#ff6b9d';
+    }
+    alert(`🎨 Тема изменена на ${globalSettings.theme === 'cosmic' ? 'Космос' : 'Тёмную'}!`);
+});
+
+document.getElementById('arbuzParticlesToggle').addEventListener('click', function() {
+    if (!playerData.isAdmin) return;
+    globalSettings.particlesEnabled = !globalSettings.particlesEnabled;
+    saveGlobalSettings();
+    this.classList.toggle('active', globalSettings.particlesEnabled);
+    if (globalSettings.particlesEnabled) {
+        createMenuAnimation();
+        alert('✨ Частицы включены!');
+    } else {
+        document.getElementById('menuBackground').innerHTML = '';
+        alert('✨ Частицы выключены!');
+    }
+});
+
+document.getElementById('arbuzResetAll').addEventListener('click', function() {
+    if (!playerData.isAdmin) return;
+    if (confirm('🍉 Сбросить все глобальные настройки?')) {
+        globalSettings = { musicEnabled: true, theme: 'cosmic', particlesEnabled: true };
+        saveGlobalSettings();
+        document.getElementById('arbuzMusicToggle').classList.add('active');
+        document.getElementById('arbuzThemeToggle').classList.add('active');
+        document.getElementById('arbuzParticlesToggle').classList.add('active');
+        document.getElementById('gameContainer').style.background = '#10141f';
+        document.querySelector('.faceblox-title').style.color = '#ff6b9d';
+        createMenuAnimation();
+        playMenuMusic();
+        alert('🍉 Все настройки сброшены!');
+    }
+});
+
+// ====== АДМИН ПАНЕЛЬ В ИГРЕ ======
+document.getElementById('gameAdminToggle').addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (!playerData.isAdmin) {
+        alert('👑 Только для ADMIN!');
+        return;
+    }
+    document.getElementById('gameAdminPanel').classList.toggle('show');
+});
+document.getElementById('closeGameAdmin').addEventListener('click', function() {
+    document.getElementById('gameAdminPanel').classList.remove('show');
+});
+document.getElementById('gameAdminHeal').addEventListener('click', function() {
+    if (!playerData.isAdmin || !gameRunning) return;
+    health = 3;
+    isDead = false;
+    defeatMsg.style.display = 'none';
+    updateHUD();
+    alert('❤️ Здоровье восстановлено!');
+});
+document.getElementById('gameAdminCoins').addEventListener('click', function() {
+    if (!playerData.isAdmin || !gameRunning) return;
+    playerData.coins += 1000;
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].coins = playerData.coins;
+    saveUsersDB();
+    updateProfileUI();
+    updateHUD();
+    alert('💰 +1000 монет!');
+});
+document.getElementById('gameAdminCustomCoins').addEventListener('click', function() {
+    if (!playerData.isAdmin || !gameRunning) return;
+    const input = document.getElementById('gameAdminCoinsInput');
+    const amount = parseInt(input.value);
+    if (isNaN(amount) || amount <= 0) { alert('Введите число!'); return; }
+    playerData.coins += amount;
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].coins = playerData.coins;
+    saveUsersDB();
+    updateProfileUI();
+    updateHUD();
+    alert('💰 +' + amount + ' монет!');
+});
+document.getElementById('gameAdminKillAll').addEventListener('click', function() {
+    if (!playerData.isAdmin || !gameRunning) return;
+    enemies = [];
+    kills = waveEnemiesTotal;
+    updateHUD();
+    alert('💀 Все враги уничтожены!');
+});
+document.getElementById('gameAdminNextWave').addEventListener('click', function() {
+    if (!playerData.isAdmin || !gameRunning || isPvpMode) return;
+    if (currentWave < maxWaves) {
+        startNextWave();
+        alert('🌊 Следующая волна!');
+    } else {
+        alert('Все волны пройдены!');
+    }
+});
+document.getElementById('gameAdminGodMode').addEventListener('click', function() {
+    if (!playerData.isAdmin || !gameRunning) return;
+    playerData.godMode = !playerData.godMode;
+    godModeActive = playerData.godMode;
+    if (currentUser && usersDB[currentUser]) usersDB[currentUser].godMode = playerData.godMode;
+    saveUsersDB();
+    alert(playerData.godMode ? '💪 Режим Бога ВКЛЮЧЕН' : '💪 Режим Бога ВЫКЛЮЧЕН');
+});
+document.getElementById('gameAdminReset').addEventListener('click', function() {
+    if (!playerData.isAdmin || !gameRunning) return;
+    if (confirm('⚠️ Сбросить текущую игру?')) {
+        stopGame();
+        victoryMsg.style.display = 'none';
+        defeatMsg.style.display = 'none';
+        document.getElementById('gameAdminPanel').classList.remove('show');
+        setTimeout(() => { startGame(); }, 300);
+    }
+});
+
+// ====== КАРТЫ ======
+document.querySelectorAll('.map-card').forEach(card => {
+    card.addEventListener('click', function(){
+        currentMap = this.dataset.map;
+        isPvpMode = false;
+        maxWaves = 5;
+        startGame();
+    });
+});
+
+// ====== УПРАВЛЕНИЕ ======
+document.addEventListener('keydown', function(e) {
+    const key = e.key.toLowerCase();
+    const isInput = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+    if (gameRunning && !isInput) {
+        if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+            keys[key] = true;
+            e.preventDefault();
+        }
+        if (key === 't' && playerData.isAdmin && player) {
+            player.x = 600; player.y = 400;
+            e.preventDefault();
+        }
+    }
+});
+document.addEventListener('keyup', function(e) {
+    const key = e.key.toLowerCase();
+    const isInput = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+    if (gameRunning && !isInput) {
+        if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+            keys[key] = false;
+            e.preventDefault();
+        }
+    }
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!gameRunning || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    mouseX = (e.clientX - rect.left) * scaleX;
+    mouseY = (e.clientY - rect.top) * scaleY;
+    mouseX = Math.min(WORLD_WIDTH - 10, Math.max(10, mouseX));
+    mouseY = Math.min(WORLD_HEIGHT - 10, Math.max(10, mouseY));
+});
+
+document.addEventListener('mousedown', function(e) {
+    if (e.button === 0 && gameRunning && !isDead) { mouseDown = true; e.preventDefault(); }
+});
+document.addEventListener('mouseup', function(e) {
+    if (e.button === 0) { mouseDown = false; e.preventDefault(); }
+});
+document.getElementById('gameCanvas').addEventListener('contextmenu', function(e) { e.preventDefault(); });
+
+// ====== ПРОФИЛЬ UI ======
+function updateProfileUI() {
+    profileName.textContent = playerData.name || 'Гость';
+    profileCoins.textContent = '🪙 ' + playerData.coins;
+    profileTrophies.textContent = '🏆 ' + playerData.trophies;
+    const skin = SKINS.find(s => s.id === playerData.skin) || SKINS[0];
+    avatarIcon.textContent = skin.icon || '🧑‍🚀';
+    hudCoins.textContent = playerData.coins;
+    updateRankUI();
+    if (profilePopup.classList.contains('show')) {
+        popupName.textContent = '👤 ' + playerData.name;
+        popupCoins.textContent = '🪙 ' + playerData.coins + ' монет';
+        popupTrophies.textContent = '🏆 ' + playerData.trophies + ' трофеев';
+        const rank = getRank(playerData.trophies);
+        popupRank.innerHTML = `🏅 Ранг: <span class="${rank.color}">${rank.emoji} ${rank.name}</span>`;
+    }
+}
+
+function renderSkinShop() {
+    const grid = document.getElementById('skinGrid');
+    grid.innerHTML = '';
+    SKINS.forEach(skin => {
+        const owned = playerData.ownedSkins.includes(skin.id);
+        const isCurrent = playerData.skin === skin.id;
+        let canBuy = false;
+        if (skin.id === 'legendary_trophy') {
+            canBuy = false; // Только через магазин трофеев
+        } else if (skin.price === 0) {
+            canBuy = !owned;
+        } else {
+            canBuy = playerData.coins >= skin.price && !owned;
+        }
+        const div = document.createElement('div');
+        let className = 'skin-item' + (owned ? '' : ' locked');
+        if (skin.id === 'sun' && owned) className += ' sun-skin';
+        if (skin.id === 'legendary_trophy' && owned) className += ' sun-skin';
+        div.className = className;
+        div.innerHTML = `
+            <span class="preview">${skin.icon}</span>
+            <div class="sname">${skin.name}</div>
+            <div class="price">${skin.id === 'legendary_trophy' ? '🏆 10000' : '🪙 ' + (skin.price === 0 ? 'Бесплатно' : skin.price)}</div>
+            ${skin.effect ? `<div class="skin-effect">⚡ ${skin.effect}</div>` : ''}
+            <div class="skin-howto">🎯 ${skin.howto}</div>
+            <div class="status">${owned ? (isCurrent ? '✅ ВЫБРАН' : '✔ Владелец') : (skin.id === 'legendary_trophy' ? '🔒 Трофеи' : '🔒 Закрыт')}</div>
+            ${skin.id === 'legendary_trophy' ? '' : (skin.price === 0 ? '' : 
+                (owned ? `<button class="buy-btn" data-skinid="${skin.id}" data-action="select">ВЫБРАТЬ</button>` :
+                `<button class="buy-btn" data-skinid="${skin.id}" data-action="buy" ${!canBuy ? 'disabled' : ''}>КУПИТЬ</button>`))
+            }
+        `;
+        grid.appendChild(div);
+    });
+    document.querySelectorAll('.buy-btn').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const skinId = this.dataset.skinid;
+            const action = this.dataset.action;
+            if (action === 'select') {
+                playerData.skin = skinId;
+                if (currentUser && usersDB[currentUser]) usersDB[currentUser].skin = skinId;
+                saveUsersDB();
+                updateProfileUI();
+                renderSkinShop();
+                alert('✅ Скин выбран!');
+            } else if (action === 'buy') {
+                const skin = SKINS.find(s => s.id === skinId);
+                if (playerData.coins >= skin.price) {
+                    playerData.coins -= skin.price;
+                    playerData.ownedSkins.push(skinId);
+                    playerData.skin = skinId;
+                    if (currentUser && usersDB[currentUser]) {
+                        usersDB[currentUser].coins = playerData.coins;
+                        usersDB[currentUser].ownedSkins = playerData.ownedSkins;
+                        usersDB[currentUser].skin = skinId;
+                    }
+                    saveUsersDB(); updateProfileUI(); updateLeaderboard(); renderSkinShop(); 
+                    alert('🎉 Скин куплен и выбран!');
+                    updateQuestProgress('buy_skins', 1);
+                }
+            }
+        });
+    });
+}
+
+// ====== ОСНОВНЫЕ ПЕРЕМЕННЫЕ ИГРЫ ======
+let currentMap = 'earth';
+let gameRunning = false;
+let gameLoopId = null;
+let victoryShown = false;
+let defeatShown = false;
+let godModeActive = false;
+let isPvpMode = false;
+let player = null;
+let enemies = [];
+let allies = [];
+let bullets = [];
+let enemyBullets = [];
+let allyBullets = [];
+let boxes = [];
+let healthPacks = [];
+let invisibilityPotions = [];
+let kills = 0;
+let health = 3;
+let currentWave = 1;
+let maxWaves = 5;
+let waveEnemiesSpawned = 0;
+let waveEnemiesTotal = 0;
+let waveDelay = 0;
+let waveAnnounceTimer = 0;
+let invisibilityTimer = 0;
+let isInvisible = false;
+let healthPackTimer = 0;
+let keys = {};
+let canvas, ctx, wrapper;
+let mouseDown = false;
+let mouseX = 600, mouseY = 400;
+let gameOverShown = false;
+let isDead = false;
+let followTarget = null;
+const WORLD_WIDTH = 1200;
+const WORLD_HEIGHT = 800;
+let pvpReward = 700;
+let speedBoostActive = false;
+let baseSpeed = 3.5;
+let abilityCooldown = 0;
+let abilityReady = true;
+let totalDamageDealt = 0;
+let matchesPlayed = 0;
+let wavesPassed = 0;
+
+// ====== ВОЛНЫ ======
+function getPvpWaveConfig(wave) {
+    const configs = {
+        1: { enemyCount: 5, enemyHealth: 3, allyCount: 5, allyHealth: 3, enemySpeed: 1.0 },
+        2: { enemyCount: 6, enemyHealth: 4, allyCount: 5, allyHealth: 3, enemySpeed: 1.1 },
+        3: { enemyCount: 7, enemyHealth: 5, allyCount: 5, allyHealth: 4, enemySpeed: 1.2 },
+        4: { enemyCount: 8, enemyHealth: 6, allyCount: 5, allyHealth: 4, enemySpeed: 1.3 },
+        5: { enemyCount: 9, enemyHealth: 7, allyCount: 5, allyHealth: 5, enemySpeed: 1.4 },
+        6: { enemyCount: 10, enemyHealth: 8, allyCount: 5, allyHealth: 5, enemySpeed: 1.5 },
+        7: { enemyCount: 12, enemyHealth: 10, allyCount: 5, allyHealth: 6, enemySpeed: 1.6 }
+    };
+    return configs[wave] || configs[1];
+}
+
+function getWaveConfig(wave) {
+    const configs = {
+        1: { count: 5, health: 2, speed: 1.0, cooldown: 50 },
+        2: { count: 7, health: 3, speed: 1.0, cooldown: 45 },
+        3: { count: 9, health: 4, speed: 1.1, cooldown: 40 },
+        4: { count: 11, health: 5, speed: 1.1, cooldown: 38 },
+        5: { count: 14, health: 6, speed: 1.2, cooldown: 35 }
+    };
+    return configs[wave] || configs[1];
+}
+
+function spawnPvpWave() {
+    const config = getPvpWaveConfig(currentWave);
+    waveEnemiesTotal = config.enemyCount;
+    waveEnemiesSpawned = config.enemyCount;
+    enemies = [];
+    allies = [];
+    for (let i = 0; i < config.enemyCount; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let dist = 200 + Math.random() * 150;
+        let ex = 800 + Math.cos(angle) * dist;
+        let ey = 400 + Math.sin(angle) * dist;
+        ex = Math.min(WORLD_WIDTH - 40, Math.max(40, ex));
+        ey = Math.min(WORLD_HEIGHT - 40, Math.max(40, ey));
+        enemies.push({
+            x: ex, y: ey, radius: 16,
+            speed: config.enemySpeed + Math.random() * 0.2,
+            health: config.enemyHealth, maxHealth: config.enemyHealth,
+            color: '#44ff88', icon: '👾',
+            shootCooldown: 30 + Math.random() * 20,
+            angle: 0, gunLength: 22, team: 'enemy',
+            dodgeTimer: 0, targetAngle: 0, state: 'attack'
+        });
+    }
+    for (let i = 0; i < config.allyCount; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let dist = 100 + Math.random() * 100;
+        let ax = 300 + Math.cos(angle) * dist;
+        let ay = 400 + Math.sin(angle) * dist;
+        ax = Math.min(WORLD_WIDTH - 40, Math.max(40, ax));
+        ay = Math.min(WORLD_HEIGHT - 40, Math.max(40, ay));
+        allies.push({
+            x: ax, y: ay, radius: 16,
+            speed: 0.8 + Math.random() * 0.3,
+            health: config.allyHealth, maxHealth: config.allyHealth,
+            color: '#4488ff', icon: '🧑‍🚀',
+            shootCooldown: 35 + Math.random() * 15,
+            angle: 0, gunLength: 22, team: 'ally',
+            dodgeTimer: 0, targetAngle: 0, state: 'attack'
+        });
+    }
+    if (isDead) {
+        isDead = false; health = 3;
+        defeatMsg.style.display = 'none';
+        if (player) { player.x = 200; player.y = 400; player.health = 3; }
+    }
+    waveAnnounce.textContent = `🌊 ВОЛНА ${currentWave}/7`;
+    waveAnnounce.classList.add('show');
+    waveAnnounceTimer = 100;
+    updateHUD();
+}
+
+function spawnWaveEnemies() {
+    const config = getWaveConfig(currentWave);
+    waveEnemiesTotal = config.count;
+    waveEnemiesSpawned = 0;
+    waveAnnounce.textContent = `🌊 ВОЛНА ${currentWave}/5`;
+    waveAnnounce.classList.add('show');
+    waveAnnounceTimer = 100;
+    let spawned = 0;
+    const spawnInterval = setInterval(() => {
+        if (!gameRunning || spawned >= config.count) {
+            clearInterval(spawnInterval);
+            return;
+        }
+        let angle = Math.random() * Math.PI * 2;
+        let dist = 250 + Math.random() * 180;
+        let ex = 600 + Math.cos(angle) * dist;
+        let ey = 400 + Math.sin(angle) * dist;
+        ex = Math.min(WORLD_WIDTH - 40, Math.max(40, ex));
+        ey = Math.min(WORLD_HEIGHT - 40, Math.max(40, ey));
+        if (player && Math.hypot(ex - player.x, ey - player.y) < 100) {
+            ex = 600 + Math.cos(angle + 1) * 300;
+            ey = 400 + Math.sin(angle + 1) * 300;
+            ex = Math.min(WORLD_WIDTH - 40, Math.max(40, ex));
+            ey = Math.min(WORLD_HEIGHT - 40, Math.max(40, ey));
+        }
+        enemies.push({
+            x: ex, y: ey, radius: 16,
+            speed: config.speed + Math.random() * 0.2,
+            health: config.health, maxHealth: config.health,
+            color: `hsl(${120 + currentWave * 20}, 70%, ${40 + currentWave * 10}%)`,
+            icon: '👾',
+            shootCooldown: config.cooldown + Math.random() * 15,
+            angle: 0, gunLength: 22, team: 'enemy',
+            dodgeTimer: 0, targetAngle: 0, state: 'attack'
+        });
+        spawned++;
+        waveEnemiesSpawned = spawned;
+        updateHUD();
+    }, 400);
+}
+
+function startNextWave() {
+    if (currentWave >= maxWaves || isPvpMode) return;
+    currentWave++;
+    spawnWaveEnemies();
+    updateHUD();
+}
+
+function checkWaveComplete() {
+    if (isPvpMode) return;
+    if (enemies.length === 0 && waveEnemiesSpawned >= waveEnemiesTotal && !victoryShown) {
+        if (currentWave >= maxWaves) {
+            victoryShown = true;
+            wavesPassed += currentWave;
+            let reward = 500;
+            if (playerData.buffs.coin > Date.now()) {
+                reward *= 2;
+            }
+            playerData.coins += reward;
+            playerData.trophies += 50;
+            if (currentUser && usersDB[currentUser]) {
+                usersDB[currentUser].coins = playerData.coins;
+                usersDB[currentUser].trophies = playerData.trophies;
+            }
+            saveUsersDB();
+            victoryMsg.textContent = `🏆 ПОБЕДА! +${reward} 🪙 +50 🏆`;
+            victoryMsg.style.display = 'block';
+            updateProfileUI(); updateHUD(); updateLeaderboard(); updateRankUI();
+            updateQuestProgress('win', 1);
+            updateQuestProgress('play', 1);
+            updateQuestProgress('waves', currentWave);
+            matchesPlayed++;
+            setTimeout(() => {
+                if (gameRunning) { stopGame(); victoryMsg.style.display = 'none'; showScreen('menu'); updateProfileUI(); }
+            }, 4000);
+            return;
+        }
+        if (waveDelay <= 0) { waveDelay = 100; }
+    }
+}
+
+function checkPvpWaveComplete() {
+    if (!isPvpMode) return;
+    if (enemies.length === 0 && !victoryShown && !defeatShown) {
+        if (currentWave >= maxWaves) {
+            victoryShown = true;
+            wavesPassed += currentWave;
+            let reward = pvpReward;
+            if (playerData.buffs.coin > Date.now()) {
+                reward *= 2;
+            }
+            playerData.coins += reward;
+            playerData.trophies += 100;
+            if (currentUser && usersDB[currentUser]) {
+                usersDB[currentUser].coins = playerData.coins;
+                usersDB[currentUser].trophies = playerData.trophies;
+            }
+            saveUsersDB();
+            victoryMsg.textContent = `🏆 ПОБЕДА! +${reward} 🪙 +100 🏆`;
+            victoryMsg.style.display = 'block';
+            updateProfileUI(); updateHUD(); updateLeaderboard(); updateRankUI();
+            updateQuestProgress('win', 1);
+            updateQuestProgress('play', 1);
+            updateQuestProgress('waves', currentWave);
+            matchesPlayed++;
+            setTimeout(() => {
+                if (gameRunning) { stopGame(); victoryMsg.style.display = 'none'; showScreen('menu'); updateProfileUI(); }
+            }, 5000);
+            return;
+        }
+        if (waveDelay <= 0) {
+            waveDelay = 120;
+            if (isDead) {
+                isDead = false; health = 3;
+                defeatMsg.style.display = 'none';
+                if (player) { player.x = 200; player.y = 400; player.health = 3; }
+            }
+        }
+    }
+}
+
+function spawnHealthPack() {
+    if (!gameRunning) return;
+    let x = 60 + Math.random() * (WORLD_WIDTH - 120);
+    let y = 40 + Math.random() * (WORLD_HEIGHT - 80);
+    if (player && Math.hypot(x - player.x, y - player.y) < 80) {
+        x = 60 + Math.random() * (WORLD_WIDTH - 120);
+        y = 40 + Math.random() * (WORLD_HEIGHT - 80);
+    }
+    healthPacks.push({ x: x, y: y, radius: 12, type: 'health', timer: 300 });
+}
+
+function spawnInvisibilityPotion() {
+    if (!gameRunning) return;
+    let x = 60 + Math.random() * (WORLD_WIDTH - 120);
+    let y = 40 + Math.random() * (WORLD_HEIGHT - 80);
+    if (player && Math.hypot(x - player.x, y - player.y) < 80) {
+        x = 60 + Math.random() * (WORLD_WIDTH - 120);
+        y = 40 + Math.random() * (WORLD_HEIGHT - 80);
+    }
+    invisibilityPotions.push({ x: x, y: y, radius: 10, type: 'invisibility', timer: 300 });
+}
+
+function checkBoxCollision(x, y, radius) {
+    for (let box of boxes) {
+        let closestX = Math.max(box.x - box.w/2, Math.min(x, box.x + box.w/2));
+        let closestY = Math.max(box.y - box.h/2, Math.min(y, box.y + box.h/2));
+        let dist = Math.hypot(x - closestX, y - closestY);
+        if (dist < radius) return box;
+    }
+    return null;
+}
+
+function updateHUD() {
+    hudHealth.textContent = health > 999 ? '∞' : (isDead ? '💀' : health);
+    hudKills.textContent = kills;
+    hudWave.textContent = isPvpMode ? (currentWave + '/7') : (currentWave + '/5');
+    hudCoins.textContent = playerData.coins;
+    if (isInvisible) {
+        document.getElementById('hudInvisibility').style.display = 'inline';
+        document.getElementById('hudInvisibility').textContent = '👻 НЕВИДИМ ' + Math.ceil(invisibilityTimer / 60) + 'с';
+    } else {
+        document.getElementById('hudInvisibility').style.display = 'none';
+    }
+    if (isPvpMode) {
+        hudTeam.textContent = '🔵 КОСМОНАВТ';
+        hudTeam.className = 'hud-team blue';
+    } else {
+        hudTeam.textContent = '🧑‍🚀 КОСМОНАВТ';
+        hudTeam.className = 'hud-team blue';
+    }
+}
+
+// ====== ЗАПУСК ИГРЫ ======
+function startGame() {
+    showScreen('game');
+    canvas = document.getElementById('gameCanvas');
+    wrapper = document.getElementById('gameWrapper');
+    ctx = canvas.getContext('2d');
+    canvas.width = WORLD_WIDTH;
+    canvas.height = WORLD_HEIGHT;
+    
+    kills = 0; health = 3; victoryShown = false; defeatShown = false;
+    isDead = false; gameOverShown = false; isInvisible = false;
+    invisibilityTimer = 0; healthPackTimer = 0; speedBoostActive = false;
+    waveDelay = 0; currentWave = 1; totalDamageDealt = 0;
+    victoryMsg.style.display = 'none'; defeatMsg.style.display = 'none';
+    enemies = []; allies = []; bullets = []; enemyBullets = []; allyBullets = [];
+    boxes = []; healthPacks = []; invisibilityPotions = [];
+    godModeActive = playerData.godMode || false;
+    keys = {}; mouseDown = false; mouseX = 600; mouseY = 400;
+    abilityCooldown = 0; abilityReady = true;
+    
+    const skin = SKINS.find(s => s.id === playerData.skin) || SKINS[0];
+    const isSunSkin = playerData.skin === 'sun' || playerData.skin === 'legendary_trophy';
+    const isNeonSkin = playerData.skin === 'neon';
+    speedBoostActive = isSunSkin || isNeonSkin;
+    let speedMultiplier = 1;
+    if (isSunSkin) speedMultiplier = playerData.skin === 'legendary_trophy' ? 2.3 : 2;
+    else if (isNeonSkin) speedMultiplier = 1.15;
+    
+    player = {
+        x: 200, y: 400, radius: 16,
+        speed: baseSpeed * speedMultiplier,
+        angle: 0, skinId: playerData.skin,
+        icon: isSunSkin ? (playerData.skin === 'legendary_trophy' ? '⭐' : '☀️') : (isNeonSkin ? '💜' : skin.icon),
+        color: isSunSkin ? (playerData.skin === 'legendary_trophy' ? '#ffd700' : '#ffdd00') : 
+               isNeonSkin ? '#ff44ff' :
+               (playerData.skin === 'gold') ? '#ffd966' : 
+               (playerData.skin === 'cyber') ? '#66ffcc' :
+               (playerData.skin === 'phantom') ? '#ccddff' :
+               (playerData.skin === 'cosmic') ? '#b366ff' :
+               (playerData.skin === 'legend') ? '#ffaa33' : 
+               (playerData.skin === 'vortex') ? '#44ffff' : '#4488ff',
+        shootCooldown: 0,
+        isSun: isSunSkin,
+        isNeon: isNeonSkin,
+        isVortex: playerData.skin === 'vortex',
+        isLegendary: playerData.skin === 'legendary_trophy'
+    };
+    
+    for (let i = 0; i < 15; i++) {
+        let bx, by, overlap, attempts = 0;
+        do {
+            bx = 80 + Math.random() * (WORLD_WIDTH - 160);
+            by = 50 + Math.random() * (WORLD_HEIGHT - 100);
+            overlap = false;
+            if (Math.hypot(bx - 200, by - 400) < 80) overlap = true;
+            for (let b of boxes) {
+                if (Math.hypot(bx - b.x, by - b.y) < 50) overlap = true;
+            }
+            attempts++;
+            if (attempts > 50) break;
+        } while (overlap);
+        boxes.push({ x: bx, y: by, w: 25 + Math.random() * 18, h: 25 + Math.random() * 18,
+            color: `hsl(${30 + Math.random() * 20}, 50%, ${25 + Math.random() * 25}%)`,
+            health: 3 + Math.floor(Math.random() * 3) });
+    }
+    
+    if (isPvpMode) {
+        spawnPvpWave();
+        hudTeam.textContent = '🔵 КОСМОНАВТ';
+        hudTeam.className = 'hud-team blue';
+    } else {
+        spawnWaveEnemies();
+        hudTeam.textContent = '🧑‍🚀 КОСМОНАВТ';
+        hudTeam.className = 'hud-team blue';
+    }
+    
+    gameRunning = true;
+    updateHUD();
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
+    gameLoop();
+}
+
+function gameLoop() {
+    if (!gameRunning) return;
+    updateGame();
+    drawGame();
+    gameLoopId = requestAnimationFrame(gameLoop);
+}
+
+function stopGame() {
+    gameRunning = false;
+    if (gameLoopId) {
+        cancelAnimationFrame(gameLoopId);
+        gameLoopId = null;
+    }
+}
+
+// ====== ОБНОВЛЕНИЕ ИГРЫ ======
+function updateGame() {
+    if (!player) return;
+    
+    if (waveDelay > 0) {
+        waveDelay--;
+        if (waveDelay === 0) {
+            if (isPvpMode) {
+                currentWave++;
+                if (currentWave <= maxWaves) spawnPvpWave();
+            } else if (enemies.length === 0 && currentWave < maxWaves) {
+                startNextWave();
+            }
+        }
+    }
+    if (waveAnnounceTimer > 0) { waveAnnounceTimer--; if (waveAnnounceTimer === 0) waveAnnounce.classList.remove('show'); }
+    if (isInvisible) { invisibilityTimer--; if (invisibilityTimer <= 0) { isInvisible = false; document.getElementById('hudInvisibility').style.display = 'none'; } }
+    if (abilityCooldown > 0) { abilityCooldown--; if (abilityCooldown === 0) abilityReady = true; }
+    
+    healthPackTimer++;
+    if (healthPackTimer >= 300 && gameRunning) {
+        healthPackTimer = 0;
+        if (healthPacks.length < 3) spawnHealthPack();
+        if (invisibilityPotions.length < 2) spawnInvisibilityPotion();
+    }
+    for (let i = healthPacks.length - 1; i >= 0; i--) {
+        let hp = healthPacks[i]; hp.timer--;
+        if (hp.timer <= 0) { healthPacks.splice(i, 1); continue; }
+        if (player && !isDead && Math.hypot(player.x - hp.x, player.y - hp.y) < player.radius + hp.radius) {
+            health = 3; healthPacks.splice(i, 1); updateHUD();
+        }
+    }
+    for (let i = invisibilityPotions.length - 1; i >= 0; i--) {
+        let pot = invisibilityPotions[i]; pot.timer--;
+        if (pot.timer <= 0) { invisibilityPotions.splice(i, 1); continue; }
+        if (player && !isDead && Math.hypot(player.x - pot.x, player.y - pot.y) < player.radius + pot.radius) {
+            isInvisible = true; invisibilityTimer = 240; invisibilityPotions.splice(i, 1); updateHUD();
+        }
+    }
+    
+    if (isPvpMode) checkPvpWaveComplete();
+    else checkWaveComplete();
+    
+    if (victoryShown) return;
+    
+    if (isPvpMode && health <= 0 && !godModeActive && !isDead && !victoryShown) {
+        isDead = true; defeatShown = true; defeatMsg.style.display = 'block';
+        let nearest = null, minDist = Infinity;
+        let allUnits = [...allies, ...enemies];
+        for (let u of allUnits) {
+            let d = Math.hypot(u.x - player.x, u.y - player.y);
+            if (d < minDist) { minDist = d; nearest = u; }
+        }
+        followTarget = nearest || allies[0] || enemies[0];
+        updateHUD();
+    }
+    
+    if (isDead && followTarget) {
+        if (wrapper) {
+            const rect = wrapper.getBoundingClientRect();
+            const targetX = followTarget.x - rect.width / 2;
+            const targetY = followTarget.y - rect.height / 2;
+            wrapper.scrollLeft = Math.max(0, Math.min(WORLD_WIDTH - rect.width, targetX));
+            wrapper.scrollTop = Math.max(0, Math.min(WORLD_HEIGHT - rect.height, targetY));
+        }
+        updateBots();
+        return;
+    }
+    
+    if (health <= 0 && !godModeActive && !isDead && !victoryShown) {
+        if (isPvpMode) {
+            isDead = true; defeatShown = true; defeatMsg.style.display = 'block';
+            let nearest = null, minDist = Infinity;
+            let allUnits = [...allies, ...enemies];
+            for (let u of allUnits) {
+                let d = Math.hypot(u.x - player.x, u.y - player.y);
+                if (d < minDist) { minDist = d; nearest = u; }
+            }
+            followTarget = nearest || allies[0] || enemies[0];
+            updateHUD();
+            return;
+        } else {
+            gameOverShown = true; stopGame();
+            setTimeout(() => {
+                alert('💀 Вы проиграли!');
+                showScreen('menu');
+                updateProfileUI();
+            }, 300);
+            return;
+        }
+    }
+    if (godModeActive) health = 999;
+
+    if (!isDead) {
+        player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+        let dx = 0, dy = 0;
+        if (keys['w']) dy -= player.speed;
+        if (keys['s']) dy += player.speed;
+        if (keys['a']) dx -= player.speed;
+        if (keys['d']) dx += player.speed;
+        if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+        let newX = Math.min(WORLD_WIDTH - 20, Math.max(20, player.x + dx));
+        if (!checkBoxCollision(newX, player.y, player.radius)) player.x = newX;
+        let newY = Math.min(WORLD_HEIGHT - 20, Math.max(20, player.y + dy));
+        if (!checkBoxCollision(player.x, newY, player.radius)) player.y = newY;
+
+        if (player.shootCooldown > 0) player.shootCooldown--;
+        let shootCount = playerData.skin === 'cyber' ? 2 : 1;
+        if (mouseDown && player.shootCooldown === 0 && gameRunning && !isDead) {
+            let angle = player.angle;
+            let spread = 0.12;
+            for (let i = 0; i < shootCount; i++) {
+                let a = angle + (i - (shootCount-1)/2) * spread;
+                bullets.push({
+                    x: player.x + Math.cos(angle) * 25,
+                    y: player.y + Math.sin(angle) * 25,
+                    vx: Math.cos(a) * 9,
+                    vy: Math.sin(a) * 9,
+                    radius: 4,
+                    damage: 1,
+                    team: 'player'
+                });
+            }
+            player.shootCooldown = 8;
+            try { playShootSound(); } catch(e) {}
+        }
+    }
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let b = bullets[i];
+        b.x += b.vx; b.y += b.vy;
+        if (b.x > WORLD_WIDTH || b.x < 0 || b.y > WORLD_HEIGHT || b.y < 0) {
+            bullets.splice(i, 1); continue;
+        }
+        let boxHit = checkBoxCollision(b.x, b.y, b.radius);
+        if (boxHit) {
+            boxHit.health--;
+            if (boxHit.health <= 0) { let idx = boxes.indexOf(boxHit); if (idx > -1) boxes.splice(idx, 1); }
+            bullets.splice(i, 1); continue;
+        }
+        let hit = false;
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            let e = enemies[j];
+            if (Math.hypot(b.x - e.x, b.y - e.y) < e.radius + b.radius) {
+                e.health -= b.damage;
+                totalDamageDealt += b.damage;
+                if (e.health <= 0) { 
+                    enemies.splice(j, 1); 
+                    kills++; 
+                    updateHUD();
+                    updateQuestProgress('kill', 1);
+                }
+                hit = true; break;
+            }
+        }
+        if (hit) { bullets.splice(i, 1); continue; }
+    }
+    
+    if (totalDamageDealt > 0 && totalDamageDealt % 1000 === 0) {
+        updateQuestProgress('damage', 1);
+    }
+
+    updateBots();
+    updateHUD();
+}
+
+function updateBots() {
+    if (!player) return;
+    if (victoryShown) return;
+    
+    for (let e of enemies) {
+        let targetX = isInvisible ? e.x + Math.cos(e.angle) * 50 : player.x;
+        let targetY = isInvisible ? e.y + Math.sin(e.angle) * 50 : player.y;
+        if (isDead) {
+            let nearestAlly = null, minDist = Infinity;
+            for (let a of allies) {
+                let d = Math.hypot(a.x - e.x, a.y - e.y);
+                if (d < minDist) { minDist = d; nearestAlly = a; }
+            }
+            if (nearestAlly) { targetX = nearestAlly.x; targetY = nearestAlly.y; }
+        }
+        let angle = Math.atan2(targetY - e.y, targetX - e.x);
+        e.angle = angle;
+        if (e.dodgeTimer > 0) {
+            e.dodgeTimer--;
+            let dodgeAngle = e.targetAngle + Math.PI / 2;
+            let moveSpeed = e.speed * 0.8;
+            let newX2 = e.x + Math.cos(dodgeAngle) * moveSpeed;
+            let newY2 = e.y + Math.sin(dodgeAngle) * moveSpeed;
+            if (!checkBoxCollision(newX2, e.y, e.radius)) e.x = newX2;
+            if (!checkBoxCollision(e.x, newY2, e.radius)) e.y = newY2;
+        } else {
+            if (!isInvisible || isDead) {
+                let moveSpeed = e.speed * 0.5;
+                let newX2 = e.x + Math.cos(angle) * moveSpeed;
+                let newY2 = e.y + Math.sin(angle) * moveSpeed;
+                if (!checkBoxCollision(newX2, e.y, e.radius)) e.x = newX2;
+                if (!checkBoxCollision(e.x, newY2, e.radius)) e.y = newY2;
+                if (Math.hypot(player.x - e.x, player.y - e.y) < 150 && Math.random() < 0.03) {
+                    e.dodgeTimer = 20 + Math.random() * 30;
+                    e.targetAngle = angle;
+                }
+            }
+        }
+        e.x = Math.min(WORLD_WIDTH - 20, Math.max(20, e.x));
+        e.y = Math.min(WORLD_HEIGHT - 20, Math.max(20, e.y));
+        if (e.shootCooldown > 0) e.shootCooldown--;
+        if (e.shootCooldown === 0 && (!isInvisible || isDead)) {
+            let a = Math.atan2(targetY - e.y, targetX - e.x);
+            for (let i = -1; i <= 1; i++) {
+                enemyBullets.push({
+                    x: e.x + Math.cos(a + i*0.1) * 25,
+                    y: e.y + Math.sin(a + i*0.1) * 25,
+                    vx: Math.cos(a + i*0.1) * 4.5,
+                    vy: Math.sin(a + i*0.1) * 4.5,
+                    radius: 5,
+                    team: 'enemy'
+                });
+            }
+            e.shootCooldown = 35 + Math.random() * 25;
+        }
+    }
+
+    for (let a of allies) {
+        let targetEnemy = null, minDist = Infinity;
+        for (let e of enemies) {
+            let d = Math.hypot(a.x - e.x, a.y - e.y);
+            if (d < minDist) { minDist = d; targetEnemy = e; }
+        }
+        if (targetEnemy) {
+            let angle = Math.atan2(targetEnemy.y - a.y, targetEnemy.x - a.x);
+            a.angle = angle;
+            if (a.dodgeTimer > 0) {
+                a.dodgeTimer--;
+                let dodgeAngle = a.targetAngle + Math.PI / 2;
+                let moveSpeed = a.speed * 0.8;
+                let newX2 = a.x + Math.cos(dodgeAngle) * moveSpeed;
+                let newY2 = a.y + Math.sin(dodgeAngle) * moveSpeed;
+                if (!checkBoxCollision(newX2, a.y, a.radius)) a.x = newX2;
+                if (!checkBoxCollision(a.x, newY2, a.radius)) a.y = newY2;
+            } else {
+                let moveSpeed = a.speed * 0.5;
+                let newX2 = a.x + Math.cos(angle) * moveSpeed;
+                let newY2 = a.y + Math.sin(angle) * moveSpeed;
+                if (!checkBoxCollision(newX2, a.y, a.radius)) a.x = newX2;
+                if (!checkBoxCollision(a.x, newY2, a.radius)) a.y = newY2;
+                if (Math.hypot(targetEnemy.x - a.x, targetEnemy.y - a.y) < 150 && Math.random() < 0.03) {
+                    a.dodgeTimer = 20 + Math.random() * 30;
+                    a.targetAngle = angle;
+                }
+            }
+            a.x = Math.min(WORLD_WIDTH - 20, Math.max(20, a.x));
+            a.y = Math.min(WORLD_HEIGHT - 20, Math.max(20, a.y));
+            if (a.shootCooldown > 0) a.shootCooldown--;
+            if (a.shootCooldown === 0) {
+                let a2 = Math.atan2(targetEnemy.y - a.y, targetEnemy.x - a.x);
+                allyBullets.push({
+                    x: a.x + Math.cos(a2) * 25,
+                    y: a.y + Math.sin(a2) * 25,
+                    vx: Math.cos(a2) * 5,
+                    vy: Math.sin(a2) * 5,
+                    radius: 4,
+                    team: 'ally'
+                });
+                a.shootCooldown = 30 + Math.random() * 20;
+            }
+        }
+    }
+
+    for (let i = allyBullets.length - 1; i >= 0; i--) {
+        let b = allyBullets[i];
+        b.x += b.vx; b.y += b.vy;
+        if (b.x > WORLD_WIDTH || b.x < 0 || b.y > WORLD_HEIGHT || b.y < 0) {
+            allyBullets.splice(i, 1); continue;
+        }
+        let hit = false;
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            let e = enemies[j];
+            if (Math.hypot(b.x - e.x, b.y - e.y) < e.radius + b.radius) {
+                e.health--;
+                if (e.health <= 0) { enemies.splice(j, 1); kills++; updateHUD(); }
+                hit = true; break;
+            }
+        }
+        if (hit) allyBullets.splice(i, 1);
+    }
+
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        let b = enemyBullets[i];
+        b.x += b.vx; b.y += b.vy;
+        if (b.x > WORLD_WIDTH || b.x < 0 || b.y > WORLD_HEIGHT || b.y < 0) {
+            enemyBullets.splice(i, 1); continue;
+        }
+        if (!isDead && !isInvisible) {
+            if (Math.hypot(b.x - player.x, b.y - player.y) < player.radius + b.radius) {
+                health--;
+                enemyBullets.splice(i, 1);
+                updateHUD();
+            }
+        }
+        for (let a of allies) {
+            if (Math.hypot(b.x - a.x, b.y - a.y) < a.radius + b.radius) {
+                a.health--;
+                enemyBullets.splice(i, 1);
+                if (a.health <= 0) { let idx = allies.indexOf(a); if (idx > -1) allies.splice(idx, 1); }
+                break;
+            }
+        }
+    }
+
+    if (!isDead && !isInvisible) {
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            if (Math.hypot(player.x - e.x, player.y - e.y) < player.radius + e.radius) {
+                health--;
+                enemies.splice(i, 1);
+                updateHUD();
+            }
+        }
+    }
+    for (let i = allies.length - 1; i >= 0; i--) {
+        let a = allies[i];
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            let e = enemies[j];
+            if (Math.hypot(a.x - e.x, a.y - e.y) < a.radius + e.radius) {
+                a.health--;
+                e.health--;
+                if (a.health <= 0) allies.splice(i, 1);
+                if (e.health <= 0) { enemies.splice(j, 1); kills++; updateHUD(); }
+                break;
+            }
+        }
+    }
+}
+
+function drawGame() {
+    ctx.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    let bgColor = '#0d111f';
+    if (currentMap === 'earth') bgColor = '#0a1a2a';
+    else if (currentMap === 'moon') bgColor = '#1a1a20';
+    else if (currentMap === 'mars') bgColor = '#2a1a12';
+    else if (currentMap === 'jupiter') bgColor = '#1f1a10';
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    for (let i = 0; i < 120; i++) {
+        let sx = (i * 137 + 23) % WORLD_WIDTH;
+        let sy = (i * 251 + 77) % WORLD_HEIGHT;
+        ctx.fillStyle = `rgba(255,255,255,${0.4+Math.sin(i+Date.now()/2000)*0.3})`;
+        ctx.beginPath(); ctx.arc(sx, sy, 1 + (i%3), 0, Math.PI*2); ctx.fill();
+    }
+    for (let box of boxes) {
+        ctx.shadowColor = '#00000088'; ctx.shadowBlur = 10;
+        ctx.fillStyle = box.color;
+        ctx.fillRect(box.x - box.w/2, box.y - box.h/2, box.w, box.h);
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#6a5a4a'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(box.x - box.w/2, box.y - box.h/2, box.w, box.h);
+        if (box.health < 5) {
+            ctx.fillStyle = '#ff3333';
+            ctx.fillRect(box.x - 15, box.y - box.h/2 - 8, 30, 4);
+            ctx.fillStyle = '#66ff66';
+            ctx.fillRect(box.x - 15, box.y - box.h/2 - 8, 30 * (box.health / 5), 4);
+        }
+    }
+    for (let hp of healthPacks) {
+        ctx.shadowColor = '#ff444488'; ctx.shadowBlur = 20;
+        ctx.fillStyle = '#ff4466';
+        ctx.beginPath(); ctx.arc(hp.x, hp.y, hp.radius, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'white'; ctx.font = '14px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('❤️', hp.x, hp.y + 5);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '8px Arial';
+        ctx.fillText(Math.ceil(hp.timer / 60) + 'с', hp.x, hp.y + hp.radius + 12);
+    }
+    for (let pot of invisibilityPotions) {
+        ctx.shadowColor = '#aa66ff88'; ctx.shadowBlur = 25;
+        ctx.fillStyle = '#8844cc';
+        ctx.beginPath(); ctx.arc(pot.x, pot.y, pot.radius, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'white'; ctx.font = '14px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('👻', pot.x, pot.y + 5);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '8px Arial';
+        ctx.fillText(Math.ceil(pot.timer / 60) + 'с', pot.x, pot.y + pot.radius + 12);
+    }
+    for (let a of allies) {
+        ctx.shadowColor = '#4488ff'; ctx.shadowBlur = 20;
+        ctx.fillStyle = a.color;
+        ctx.beginPath(); ctx.arc(a.x, a.y, a.radius, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#88bbff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(a.x + Math.cos(a.angle) * 22, a.y + Math.sin(a.angle) * 22); ctx.stroke();
+        ctx.fillStyle = 'white'; ctx.font = '16px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('🧑‍🚀', a.x-9, a.y+6);
+        ctx.fillStyle = '#ff3333';
+        ctx.fillRect(a.x-20, a.y-28, 40, 4);
+        ctx.fillStyle = '#4488ff';
+        ctx.fillRect(a.x-20, a.y-28, 40 * (a.health / a.maxHealth), 4);
+    }
+    for (let e of enemies) {
+        ctx.shadowColor = '#33ff66'; ctx.shadowBlur = 20;
+        ctx.fillStyle = e.color;
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#88ff88'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(e.angle) * e.gunLength, e.y + Math.sin(e.angle) * e.gunLength); ctx.stroke();
+        ctx.fillStyle = 'white'; ctx.font = '16px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('👾', e.x-9, e.y+6);
+        ctx.fillStyle = '#ff3333';
+        ctx.fillRect(e.x-20, e.y-28, 40, 4);
+        ctx.fillStyle = '#33ff33';
+        ctx.fillRect(e.x-20, e.y-28, 40 * (e.health / e.maxHealth), 4);
+        ctx.fillStyle = 'white'; ctx.font = '8px Arial';
+        ctx.fillText(Math.ceil(e.health) + '/' + e.maxHealth, e.x, e.y-32);
+    }
+    if (player && !isDead && !victoryShown) {
+        let alpha = isInvisible ? 0.3 : 1.0;
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.rotate(player.angle);
+        ctx.globalAlpha = alpha;
+        if (player.isSun || player.isLegendary) {
+            ctx.shadowColor = player.isLegendary ? '#ffd700' : '#ffdd00';
+            ctx.shadowBlur = 60;
+            const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, 40);
+            grad.addColorStop(0, player.isLegendary ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 221, 0, 0.3)');
+            grad.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 40;
+        }
+        if (player.isNeon) {
+            ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 50;
+            const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, 35);
+            grad.addColorStop(0, 'rgba(255, 68, 255, 0.3)');
+            grad.addColorStop(1, 'rgba(255, 68, 255, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 30;
+        }
+        if (player.isVortex) {
+            ctx.shadowColor = '#44ffff'; ctx.shadowBlur = 50;
+            const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, 35);
+            grad.addColorStop(0, 'rgba(68, 255, 255, 0.3)');
+            grad.addColorStop(1, 'rgba(68, 255, 255, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 30;
+        }
+        ctx.fillStyle = player.color;
+        ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = player.isSun ? '#ffdd00' : player.isNeon ? '#ff44ff' : player.isVortex ? '#44ffff' : player.isLegendary ? '#ffd700' : '#88ddff';
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(30, 0); ctx.stroke();
+        ctx.strokeStyle = player.isSun ? '#ffaa00' : player.isNeon ? '#cc22cc' : player.isVortex ? '#22cccc' : player.isLegendary ? '#daa520' : '#66bbff';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(16, -3); ctx.lineTo(30, -3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(16, 3); ctx.lineTo(30, 3); ctx.stroke();
+        if (player.isSun || player.isLegendary) {
+            ctx.strokeStyle = player.isLegendary ? 'rgba(255, 215, 0, 0.6)' : 'rgba(255, 221, 0, 0.4)';
+            ctx.lineWidth = 2;
+            const count = player.isLegendary ? 16 : 12;
+            const radius = player.isLegendary ? 32 : 28;
+            for (let i = 0; i < count; i++) {
+                let angle = (i / count) * Math.PI * 2 + Date.now() / 2000;
+                ctx.beginPath(); ctx.moveTo(Math.cos(angle) * 18, Math.sin(angle) * 18);
+                ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius); ctx.stroke();
+            }
+        }
+        if (player.isNeon) {
+            ctx.strokeStyle = 'rgba(255, 68, 255, 0.4)'; ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                let angle = (i / 8) * Math.PI * 2 + Date.now() / 1500;
+                ctx.beginPath(); ctx.moveTo(Math.cos(angle) * 22, Math.sin(angle) * 22);
+                ctx.lineTo(Math.cos(angle) * 30, Math.sin(angle) * 30); ctx.stroke();
+            }
+        }
+        if (player.isVortex) {
+            ctx.strokeStyle = 'rgba(68, 255, 255, 0.4)'; ctx.lineWidth = 2;
+            for (let i = 0; i < 6; i++) {
+                let angle = (i / 6) * Math.PI * 2 + Date.now() / 1200;
+                ctx.beginPath(); ctx.moveTo(Math.cos(angle) * 18, Math.sin(angle) * 18);
+                ctx.lineTo(Math.cos(angle) * 32, Math.sin(angle) * 32); ctx.stroke();
+            }
+        }
+        ctx.fillStyle = 'white';
+        ctx.beginPath(); ctx.arc(5, -5, 3.5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(5, 5, 3.5, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#222';
+        ctx.beginPath(); ctx.arc(7, -5, 1.8, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(7, 5, 1.8, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1.0;
+        ctx.restore();
+        ctx.fillStyle = 'white'; ctx.font = '18px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(player.isLegendary ? '⭐' : player.isSun ? '☀️' : player.isNeon ? '💜' : player.isVortex ? '🌀' : (player.icon || '🧑‍🚀'), player.x-9, player.y+7);
+        ctx.fillStyle = '#ff3333';
+        ctx.fillRect(player.x-25, player.y-35, 50, 5);
+        ctx.fillStyle = player.isLegendary ? '#ffd700' : player.isSun ? '#ffdd00' : player.isNeon ? '#ff44ff' : player.isVortex ? '#44ffff' : '#66ff66';
+        let hpPercent = health > 999 ? 1 : health/3;
+        ctx.fillRect(player.x-25, player.y-35, 50 * hpPercent, 5);
+        if (playerData.isAdmin) {
+            ctx.fillStyle = '#ff6b9d'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+            ctx.fillText('👑 ADMIN', player.x, player.y - 45);
+        }
+        if (isInvisible) {
+            ctx.fillStyle = '#aa88ff'; ctx.font = '14px Arial'; ctx.textAlign = 'center';
+            ctx.fillText('👻 НЕВИДИМ', player.x, player.y - 55);
+        }
+        if (player.isSun || player.isNeon || player.isLegendary) {
+            ctx.fillStyle = player.isLegendary ? '#ffd700' : player.isSun ? '#ffdd00' : '#ff44ff';
+            ctx.font = '12px Arial'; ctx.textAlign = 'center';
+            let speedText = '';
+            if (player.isLegendary) speedText = '⭐ x2.3 СКОРОСТЬ';
+            else if (player.isSun) speedText = '☀️ x2 СКОРОСТЬ';
+            else if (player.isNeon) speedText = '💜 x1.15 СКОРОСТЬ';
+            ctx.fillText(speedText, player.x, player.y + 32);
+        }
+        if (player.isVortex) {
+            ctx.fillStyle = '#44ffff'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
+            ctx.fillText('🌀 F - ТЕЛЕПОРТ 200px', player.x, player.y + 32);
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+        ctx.fillText(playerData.name, player.x, player.y + 45);
+    } else if (isDead && !victoryShown) {
+        ctx.fillStyle = 'rgba(255,0,0,0.5)'; ctx.font = '24px Arial'; ctx.textAlign = 'center';
+        ctx.fillText('💀', player.x, player.y - 20);
+        ctx.fillStyle = 'rgba(255,100,100,0.6)'; ctx.font = '14px Arial';
+        ctx.fillText('ВЫ ПАЛИ', player.x, player.y + 5);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '11px Arial';
+        ctx.fillText('👀 Наблюдение', player.x, player.y + 25);
+    }
+    ctx.shadowBlur = 15; ctx.shadowColor = '#88ddff'; ctx.fillStyle = '#88ddff';
+    for (let b of bullets) { ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); ctx.fill(); }
+    ctx.shadowColor = '#4488ff'; ctx.fillStyle = '#4488ff';
+    for (let b of allyBullets) { ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); ctx.fill(); }
+    ctx.shadowColor = '#ff6644'; ctx.fillStyle = '#ff6644';
+    for (let b of enemyBullets) { ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); ctx.fill(); }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '13px Arial'; ctx.textAlign = 'right';
+    if (isPvpMode && !victoryShown) {
+        ctx.fillText('⚔️ 5 НА 5 | Волна ' + currentWave + '/7 | Врагов: ' + enemies.length + ' | Союзников: ' + allies.length, WORLD_WIDTH - 20, 30);
+    } else if (!isPvpMode) {
+        ctx.fillText('Волна ' + currentWave + '/5 | Врагов: ' + enemies.length, WORLD_WIDTH - 20, 30);
+    }
+    if (wrapper && !isDead && !victoryShown) {
+        const rect = wrapper.getBoundingClientRect();
+        const targetX = player.x - rect.width / 2;
+        const targetY = player.y - rect.height / 2;
+        wrapper.scrollLeft = Math.max(0, Math.min(WORLD_WIDTH - rect.width, targetX));
+        wrapper.scrollTop = Math.max(0, Math.min(WORLD_HEIGHT - rect.height, targetY));
+    } else if (wrapper && isDead && followTarget && !victoryShown) {
+        const rect = wrapper.getBoundingClientRect();
+        const targetX = followTarget.x - rect.width / 2;
+        const targetY = followTarget.y - rect.height / 2;
+        wrapper.scrollLeft = Math.max(0, Math.min(WORLD_WIDTH - rect.width, targetX));
+        wrapper.scrollTop = Math.max(0, Math.min(WORLD_HEIGHT - rect.height, targetY));
+    }
+}
+
+function playShootSound() {
+    try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.1);
+    } catch(e) {}
+}
+
+// ====== ЗАПУСК ======
+showScreen('auth');
+createMenuAnimation();
+setTimeout(() => { playMenuMusic(); }, 100);
+
+})();
+</script>
+</body>
+</html>
